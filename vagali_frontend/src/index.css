@@ -1,0 +1,20 @@
+/* ========================================================== */
+/* 1. Estilos Globais e Reset */
+/* ========================================================== */
+html, body, #root {
+    height: 100%; /* Garante que o HTML, BODY e o div root ocupem a tela toda */
+    min-height: 100vh; /* Garante no mínimo a altura da viewport */
+    margin: 0;
+    padding: 0;
+}
+
+body {
+    font-family: 'Segoe UI', system-ui, sans-serif;
+    background-color: var(--light-bg);
+    color: var(--dark-text);
+}
+
+/* Classe de utilidade que você já tem, crucial para o Layout */
+.min-vh-100 {
+    min-height: 100vh;
+}
