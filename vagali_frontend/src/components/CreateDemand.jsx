@@ -9,23 +9,34 @@ import {
     PlusCircleFill, PencilSquare, XCircle, Tools, 
     GeoAlt, CashCoin, TagFill, FileText, 
     Lightning, Hammer, Wrench, Cake, DropletFill, 
-    Scissors, CodeSlash, HouseDoor, Truck 
+    Scissors, CodeSlash, HouseDoor, Truck,
+    BrushFill, Display
 } from 'react-bootstrap-icons'; 
 
 // 🚨 Mapeamento EXPANDIDO e PADRONIZADO (use nomes de serviços em minúsculas, sem acentos)
 // *************** CERTIFIQUE-SE DE QUE OS NOMES AQUI CORRESPONDEM AOS NOMES DA SUA API! ****************
 const ICON_MAP = {
+    // Serviços existentes
     'eletricista': { Icon: Lightning, color: 'text-warning' },
     'encanador': { Icon: DropletFill, color: 'text-info' },
+    
+    // NOVOS SERVIÇOS (As chaves são: Nome do DB em minúsculas, sem espaços/acentos)
+    'pintor': { Icon: BrushFill, color: 'text-danger' },
+    'limpezadecasa': { Icon: HouseDoor, color: 'text-light' }, // De "Limpeza de Casa"
+    'montagemdemoveis': { Icon: Tools, color: 'text-secondary' }, // De "Montagem de Móveis"
+    'tecnicodeinformatica': { Icon: Display, color: 'text-info' }, // De "Técnico de Informática"
+    'pedreiro': { Icon: Hammer, color: 'text-orange' }, // De "Pedreiro"
+    
+    // Outros serviços que você possa ter
     'construcao': { Icon: Hammer, color: 'text-danger' },
     'mecanico': { Icon: Wrench, color: 'text-success' },
     'confeiteira': { Icon: Cake, color: 'text-pink' },
     'cabeleireiro': { Icon: Scissors, color: 'text-purple' },
     'costureira': { Icon: CodeSlash, color: 'text-cyan' },
-    'limpeza': { Icon: HouseDoor, color: 'text-light' }, 
-    'frete': { Icon: Truck, color: 'text-orange' }, // Novo!
-    'montagem': { Icon: Tools, color: 'text-secondary' }, // Exemplo para Montagem de Móveis
-    'geral': { Icon: Tools, color: 'text-muted' }, // Ícone genérico de fallback
+    'frete': { Icon: Truck, color: 'text-orange' }, 
+    
+    // Ícone de Fallback (Se o nome não for encontrado)
+    'geral': { Icon: Tools, color: 'text-muted' }, 
 };
 
 const CreateDemand = ({ isEditMode = false }) => {

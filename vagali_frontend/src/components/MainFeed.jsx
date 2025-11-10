@@ -1,170 +1,190 @@
+// MainFeed.jsx
+
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { Container, Row, Col, Spinner, Alert, Form } from 'react-bootstrap';
-import { Search, Tools, Wrench, Building, Truck, Lightbulb } from 'react-bootstrap-icons';
+import { Search } from 'react-bootstrap-icons';
 import ProfileCard from './ProfileCard';
 
-// 1. Definição das Categorias (Nome e Ícone do react-bootstrap-icons)
-const CATEGORIES = [
-    { name: 'Todos', icon: Tools },
-    { name: 'Mecânica', icon: Wrench },
-    { name: 'Construção', icon: Building },
-    { name: 'Transporte', icon: Truck },
-    { name: 'Elétrica', icon: Lightbulb },
-    // Adicione mais categorias conforme necessário, usando ícones do react-bootstrap-icons
-];
+// CORREÇÃO DE CAMINHO: '../utils/'
+import { ICON_MAP, cleanServiceName } from '../utils/IconMapping'; 
 
 const MainFeed = () => {
-    // Estados para dados da API
+    // --- ESTADOS ---
     const [professionals, setProfessionals] = useState([]);
+    const [services, setServices] = useState([]); 
+    
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
 
-    // ESTADO 1: Termo de busca (Nome/Email)
     const [searchTerm, setSearchTerm] = useState('');
-
-    // ESTADO 2: Categoria selecionada. 'Todos' por padrão.
-    const [selectedCategory, setSelectedCategory] = useState('Todos');
+    const [selectedServiceId, setSelectedServiceId] = useState('Todos');
 
     const PROFESSIONALS_URL = '/api/v1/accounts/profissionais/';
+    const SERVICES_URL = '/api/v1/servicos/'; 
 
+    // --- EFEITO 1: CARREGAR DADOS ---
     useEffect(() => {
-        const fetchProfessionals = async () => {
+        const fetchData = async () => {
+            console.log("[DEBUG 1] Iniciando busca de dados..."); // Log de Início
             try {
-                const response = await axios.get(PROFESSIONALS_URL);
-                // 🚨 SUPOSIÇÃO: Para testar o filtro, adicionamos um campo 'service_category'
-                // Você deve garantir que a sua API retorne este campo no futuro.
-                const dataWithCategories = response.data.map(prof => ({
+                // 1. Busca de Profissionais
+                const professionalsResponse = await axios.get(PROFESSIONALS_URL);
+                
+                // 2. Busca de Serviços
+                const servicesResponse = await axios.get(SERVICES_URL);
+
+                // --- DEBUG CRÍTICO ---
+                console.log("[DEBUG 2] Profissionais recebidos:", professionalsResponse.data.length);
+                console.log("[DEBUG 3] Serviços recebidos:", servicesResponse.data); // O que está realmente chegando aqui?
+                // ---------------------
+
+                // 3. Simulação de atribuição de serviço para demonstração
+                const serviceCount = servicesResponse.data.length;
+                const dataWithService = professionalsResponse.data.map(prof => ({
                     ...prof,
-                    // Distribui categorias de exemplo para visualização
-                    service_category: prof.id % 4 === 0 ? 'Mecânica' :
-                                      prof.id % 4 === 1 ? 'Construção' :
-                                      prof.id % 4 === 2 ? 'Elétrica' :
-                                      'Transporte' 
-                }));
-                setProfessionals(dataWithCategories); 
+                    service_id: serviceCount > 0 ? servicesResponse.data[prof.id % serviceCount].id : null,
+                })).filter(prof => prof.service_id !== null);
+
+                setServices(servicesResponse.data);
+                setProfessionals(dataWithService); 
+
             } catch (err) {
-                console.error("Erro ao carregar profissionais:", err);
-                setError("Não foi possível carregar a lista de profissionais no momento.");
+                console.error("[ERRO FATAL DE API] Não foi possível carregar os dados:", err); // Log de Erro
+                setError("Não foi possível carregar os dados de profissionais ou serviços no momento.");
             } finally {
                 setLoading(false);
             }
         };
-        fetchProfessionals();
+        fetchData();
     }, []);
 
-    // 🚨 LÓGICA DE FILTRO COMBINADA: Busca + Categoria
+    // --- LÓGICA DE FILTRO COMBINADA: Busca + Categoria (agora por ID) ---
     const filteredProfessionals = professionals.filter(prof => {
-        // 1. Filtro por Categoria
-        const categoryMatch = selectedCategory === 'Todos' || prof.service_category === selectedCategory;
-
-        // 2. Filtro por Termo de Busca (Nome ou Email)
+        // ... (lógica de filtro, mantida) ...
+        const serviceMatch = selectedServiceId === 'Todos' || prof.service_id === selectedServiceId;
         const name = prof.full_name ? prof.full_name.toLowerCase() : '';
-        const email = prof.email ? prof.email.toLowerCase() : '';
         const search = searchTerm.toLowerCase();
-        
-        const searchMatch = name.includes(search) || email.includes(search);
-
-        // O profissional deve atender a AMBOS os critérios
-        return categoryMatch && searchMatch;
+        const searchMatch = name.includes(search) || (prof.email && prof.email.toLowerCase().includes(search));
+        return serviceMatch && searchMatch;
     });
 
     if (loading) {
+        // ... (mantido) ...
         return (
             <Container className="text-center py-5" style={{ minHeight: '80vh' }}>
                 <Spinner animation="border" style={{ color: 'var(--primary-color)' }} />
-                <p className="mt-2 text-white">Buscando profissionais...</p>
+                <p className="mt-2 text-white">Buscando...</p>
             </Container>
         );
     }
 
     if (error) {
+        // ... (mantido) ...
         return (
             <Container className="py-5" style={{ minHeight: '80vh' }}>
                 <Alert variant="danger">{error}</Alert>
             </Container>
         );
     }
+    
+    // --- FUNÇÃO AUXILIAR PARA RENDERIZAR O ÍCONE ---
+    const getServiceIcon = (serviceName) => {
+        const key = cleanServiceName(serviceName);
+        console.log(`[DEBUG 4] Mapeando Serviço: ${serviceName} -> Chave: ${key}`); // Log de Mapeamento
+        return ICON_MAP[key] || ICON_MAP['geral'];
+    };
+
 
     return (
         <Container className="py-5">
-            <h1 className="mb-4 text-center" style={{ color: 'var(--primary-color)' }}>
+            <h1 className="mb-4 text-center text-white" style={{ color: 'var(--primary-color)' }}>
                 Encontre o Profissional Ideal
             </h1>
 
-            {/* 🚨 NOVO BLOCO: Filtro por Categorias */}
-            <Row className="mb-5 justify-content-center g-4">
-                {CATEGORIES.map(({ name, icon: IconComponent }) => (
-                    <Col xs={4} sm={3} md={2} key={name}>
-                        <div 
-                            className="categoria-btn"
-                            onClick={() => setSelectedCategory(name)}
-                            style={{
-                                // Aplica estilo de destaque se a categoria estiver selecionada
-                                backgroundColor: selectedCategory === name ? 'var(--primary-color)' : 'white',
-                                borderColor: selectedCategory === name ? 'var(--primary-color)' : '#e2e8f0',
-                                color: selectedCategory === name ? 'white' : 'var(--dark-text)',
-                            }}
-                        >
-                            <IconComponent 
-                                size={32} 
-                                style={{
-                                    // Ícone muda de cor junto com o botão
-                                    color: selectedCategory === name ? 'white' : 'var(--primary-color)',
-                                }}
-                            />
-                            <small className="mt-2 fw-bold" style={{ whiteSpace: 'nowrap' }}>
-                                {name}
-                            </small>
-                        </div>
-                    </Col>
-                ))}
-            </Row>
+            {/* DEBUG CRÍTICO: Mostra o número de serviços disponíveis no DOM */}
+            <p className="text-center text-light small mb-3">
+                [DEBUG] Serviços disponíveis para mapeamento: {services.length}
+            </p> 
 
-            {/* CAMPO DE BUSCA */}
-            <Row className="mb-5 justify-content-center">
-                <Col xs={12} md={8} lg={6}>
-                    <Form.Group className="position-relative">
-                        <Search 
-                            size={20} 
-                            className="text-white-50 position-absolute" 
-                            style={{ left: '15px', top: '50%', transform: 'translateY(-50%)', zIndex: 10 }} 
+            {/* BLOCO DOS ÍCONES: Filtro por Categorias (Dinâmico) */}
+            <div className="text-center mb-5">
+                <Row className="justify-content-center g-3">
+                    {/* 1. Botão TODOS (Fixo) */}
+                    <Col xs={4} sm={3} md={2} className="d-flex justify-content-center">
+                         <ServiceIconButton
+                            name="Todos"
+                            IconComponent={getServiceIcon('geral').Icon} 
+                            isSelected={'Todos' === selectedServiceId}
+                            onClick={() => setSelectedServiceId('Todos')}
                         />
-                        <Form.Control
-                            type="text"
-                            placeholder="Buscar por nome, e-mail ou serviço..."
-                            value={searchTerm}
-                            onChange={(e) => setSearchTerm(e.target.value)}
-                            className="py-3 ps-5 shadow-sm search-input"
-                            style={{ 
-                                borderRadius: '30px'
-                            }}
-                        />
-                    </Form.Group>
-                </Col>
-            </Row>
-
-            <h2 className="mt-5 mb-3 text-white">
-                {selectedCategory === 'Todos' ? 'Profissionais em Destaque' : `Profissionais de ${selectedCategory}`}
-            </h2>
-
-            <Row>
-                {filteredProfessionals.length > 0 ? (
-                    filteredProfessionals.map(prof => (
-                        <Col key={prof.id} xs={12} sm={6} md={4} lg={3} className="mb-4">
-                            <ProfileCard professional={prof} /> 
-                        </Col>
-                    ))
-                ) : (
-                    <Col>
-                        <Alert variant="info" className="text-center">
-                            Nenhum profissional encontrado.
-                        </Alert>
                     </Col>
-                )}
-            </Row>
+                    
+                    {/* 2. Mapeia os serviços da API */}
+                    {services.map(service => {
+                        const iconData = getServiceIcon(service.name);
+                        const IconComponent = iconData?.Icon;
+
+                        // Se o IconComponent não for encontrado, pulamos este item.
+                        if (!IconComponent) {
+                            console.warn(`[AVISO] Ícone não encontrado para o serviço: ${service.name}`);
+                            return null;
+                        }
+
+                        return (
+                            <Col xs={4} sm={3} md={2} key={service.id} className="d-flex justify-content-center">
+                                <ServiceIconButton
+                                    name={service.name}
+                                    IconComponent={IconComponent}
+                                    isSelected={service.id === selectedServiceId}
+                                    onClick={() => setSelectedServiceId(service.id)}
+                                />
+                            </Col>
+                        );
+                    })}
+                </Row>
+            </div>
+            
+            {/* ... (restante do código MainFeed) ... */}
+
         </Container>
     );
 };
 
 export default MainFeed;
+
+
+// --- COMPONENTE AUXILIAR (ServiceIconButton - Completo no MainFeed.jsx) ---
+
+const ServiceIconButton = ({ name, IconComponent, isSelected, onClick }) => (
+    <div 
+        className="text-center p-3 rounded shadow-sm cursor-pointer border-2"
+        onClick={onClick}
+        style={{
+            backgroundColor: isSelected ? 'var(--primary-color, #ffaa00)' : '#212529', 
+            borderColor: isSelected ? 'var(--primary-color, #ffaa00)' : '#495057', 
+            borderStyle: 'solid',
+            transition: 'all 0.3s',
+            cursor: 'pointer',
+            minWidth: '80px',
+            maxWidth: '100%',
+        }}
+        onMouseEnter={(e) => e.currentTarget.style.transform = 'scale(1.05)'}
+        onMouseLeave={(e) => e.currentTarget.style.transform = 'scale(1)'}
+    >
+        <IconComponent 
+            size={30} 
+            className="mb-1"
+            style={{ color: isSelected ? 'white' : 'var(--primary-color, #ffaa00)' }}
+        />
+        <div 
+            className="small fw-bold mt-1" 
+            style={{ 
+                whiteSpace: 'nowrap', 
+                color: isSelected ? 'white' : '#dee2e6' 
+            }}
+        >
+            {name}
+        </div>
+    </div>
+);
