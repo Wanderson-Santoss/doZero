@@ -228,3 +228,58 @@ body {
   .dropdown-menu .dropdown-item:hover {
     background-color: var(--primary-color) !important;
   }
+
+
+
+
+
+
+
+/* Fundo global */
+body {
+  background-color: #f2f2f2 !important;
+  margin: 0;
+  padding: 0;
+  font-family: "Inter", sans-serif;
+}
+
+/* Animação suave */
+.fade-in {
+  animation: fadeIn 0.6s ease-out;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* Inputs modernos */
+.form-control-custom {
+  background-color: #1f2630 !important;
+  border: 1px solid #2d3540 !important;
+  color: #fff !important;
+  box-shadow: none !important;
+}
+
+.form-control-custom:focus {
+  border-color: #0d6efd !important;
+  background-color: #1f2630 !important;
+  color: #fff !important;
+}
+
+/* Link estilizado */
+.link-blue {
+  color: #0d6efd !important;
+  text-decoration: none;
+}
+
+.link-blue:hover {
+  text-decoration: underline;
+}
+
+/* Card login */
+.card-login {
+  background-color: #1f2630 !important;
+  border-radius: 14px !important;
+  border: 1px solid #0d6efd50 !important;
+}
