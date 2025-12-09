@@ -15,7 +15,9 @@ import {
   Flag,
   ChevronDown,
   ChevronUp,
-  Camera, // ícone da camerazinha
+  Camera,
+  Plus,
+  Trash2,
 } from "lucide-react";
 import "./professionalProfile.css";
 import { useAuth } from "./AuthContext";
@@ -34,6 +36,10 @@ const ProfessionalProfileView = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
+  // PORTFÓLIO real vindo da API
+  const [portfolioItems, setPortfolioItems] = useState([]);
+  const [portfolioLoading, setPortfolioLoading] = useState(false);
+  const [portfolioError, setPortfolioError] = useState(null);
   const [portfolioPage, setPortfolioPage] = useState(1);
 
   const [sectionsOpen, setSectionsOpen] = useState({
@@ -43,9 +49,12 @@ const ProfessionalProfileView = () => {
     feedbacks: true,
   });
 
-  // input de arquivo + preview local
+  // avatar
   const fileInputRef = useRef(null);
   const [avatarPreview, setAvatarPreview] = useState(null);
+
+  // input de portfólio
+  const portfolioInputRef = useRef(null);
 
   const toggleSection = (key) => {
     setSectionsOpen((prev) => ({ ...prev, [key]: !prev[key] }));
@@ -55,7 +64,7 @@ const ProfessionalProfileView = () => {
   const isOwner =
     isAuthenticated && isUserProfessional && String(userId) === String(id);
 
-  // carrega dados do profissional
+  // ----------------- CARREGAR DADOS DO PROFISSIONAL -----------------
   useEffect(() => {
     if (!id) return;
 
@@ -74,6 +83,30 @@ const ProfessionalProfileView = () => {
     };
 
     fetchProfessional();
+  }, [id]);
+
+  // ----------------- CARREGAR PORTFÓLIO DA API -----------------
+  useEffect(() => {
+    if (!id) return;
+
+    const fetchPortfolio = async () => {
+      setPortfolioLoading(true);
+      setPortfolioError(null);
+      try {
+        // backend deve aceitar esse parâmetro professional_id (a gente já preparou)
+        const resp = await axios.get("/api/v1/accounts/portfolio/", {
+          params: { professional_id: id },
+        });
+        setPortfolioItems(resp.data);
+      } catch (err) {
+        console.error("Erro ao carregar portfólio:", err.response || err);
+        setPortfolioError("Não foi possível carregar o portfólio.");
+      } finally {
+        setPortfolioLoading(false);
+      }
+    };
+
+    fetchPortfolio();
   }, [id]);
 
   const rating = useMemo(() => {
@@ -106,6 +139,7 @@ const ProfessionalProfileView = () => {
       .filter(Boolean);
   }, [professional]);
 
+  // ----------------- FOLLOW / SHARE / REPORT -----------------
   const handleFollow = () => {
     if (!isAuthenticated) {
       const go = window.confirm(
@@ -132,7 +166,7 @@ const ProfessionalProfileView = () => {
     alert("Funcionalidade de denúncia será implementada em breve.");
   };
 
-  // quando é o dono, clicar no avatar pergunta e abre o seletor de arquivos
+  // ----------------- AVATAR -----------------
   const handleAvatarClick = () => {
     if (!isOwner) return;
 
@@ -142,7 +176,6 @@ const ProfessionalProfileView = () => {
     }
   };
 
-  // quando o usuário escolhe o arquivo -> preview + upload pro backend
   const handleFileChange = async (e) => {
     const file = e.target.files && e.target.files[0];
     if (!file) return;
@@ -155,41 +188,122 @@ const ProfessionalProfileView = () => {
       const formData = new FormData();
       formData.append("photo", file);
 
-      // envia a foto para o backend
       await axios.post("/api/v1/accounts/perfil/me/photo/", formData, {
         headers: {
           "Content-Type": "multipart/form-data",
-          // o Authorization: Token xxx deve estar sendo configurado globalmente
         },
       });
 
-      // recarrega os dados do profissional para pegar a URL real da foto salva
+      // recarrega o profissional para pegar a URL correta do backend
       const resp = await axios.get(`${PROFESSIONALS_URL}${id}/`);
       setProfessional(resp.data);
     } catch (err) {
       console.error("Erro ao atualizar foto:", err.response || err);
       alert("Não foi possível salvar sua foto de perfil. Tente novamente.");
     } finally {
-      // limpa o input para permitir escolher o mesmo arquivo de novo, se quiser
       if (fileInputRef.current) {
         fileInputRef.current.value = "";
       }
     }
   };
 
-  // 👇 URL final da foto: preview > backend URL > null
   const avatarUrl = useMemo(() => {
     if (avatarPreview) return avatarPreview;
     if (professional?.photo) {
-      // se o backend já devolve começando com /media/...
       if (professional.photo.startsWith("http")) {
-        return professional.photo; // já é URL completa
+        return professional.photo;
       }
       return `${API_BASE_URL}${professional.photo}`;
     }
     return null;
   }, [avatarPreview, professional]);
 
+  // ----------------- PORTFÓLIO (ADICIONAR / DELETAR) -----------------
+  const resolveMediaUrl = (path) => {
+    if (!path) return null;
+    if (path.startsWith("http")) return path;
+    return `${API_BASE_URL}${path}`;
+  };
+
+  const handleAddMediaClick = () => {
+    if (!isOwner) return;
+    if (portfolioInputRef.current) {
+      portfolioInputRef.current.click();
+    }
+  };
+
+  const handlePortfolioFilesChange = async (e) => {
+    const files = Array.from(e.target.files || []);
+    if (!files.length) return;
+
+    try {
+      setPortfolioLoading(true);
+      setPortfolioError(null);
+
+      // faz upload de todos os arquivos selecionados
+      for (const file of files) {
+        const formData = new FormData();
+        formData.append("file", file);
+        const isVideo = file.type.startsWith("video");
+        formData.append("is_video", isVideo ? "true" : "false");
+
+        await axios.post("/api/v1/accounts/portfolio/", formData, {
+          headers: {
+            "Content-Type": "multipart/form-data",
+          },
+        });
+      }
+
+      // recarrega o portfólio
+      const resp = await axios.get("/api/v1/accounts/portfolio/", {
+        params: { professional_id: id },
+      });
+      setPortfolioItems(resp.data);
+    } catch (err) {
+      console.error("Erro ao enviar mídia do portfólio:", err.response || err);
+      setPortfolioError("Não foi possível adicionar a(s) mídia(s).");
+    } finally {
+      setPortfolioLoading(false);
+      if (portfolioInputRef.current) {
+        portfolioInputRef.current.value = "";
+      }
+    }
+  };
+
+  const handleDeleteMedia = async (itemId) => {
+    if (!isOwner) return;
+    const yes = window.confirm(
+      "Deseja remover esta mídia do seu portfólio?"
+    );
+    if (!yes) return;
+
+    try {
+      await axios.delete(`/api/v1/accounts/portfolio/${itemId}/`);
+      setPortfolioItems((prev) => prev.filter((item) => item.id !== itemId));
+    } catch (err) {
+      console.error("Erro ao deletar mídia:", err.response || err);
+      alert("Não foi possível deletar esta mídia. Tente novamente.");
+    }
+  };
+
+  // paginação do portfólio
+  const totalPortfolioPages = Math.max(
+    1,
+    Math.ceil(portfolioItems.length / ITEMS_PER_PAGE)
+  );
+  const currentPage = Math.min(portfolioPage, totalPortfolioPages);
+
+  const paginatedPortfolioItems = portfolioItems.slice(
+    (currentPage - 1) * ITEMS_PER_PAGE,
+    currentPage * ITEMS_PER_PAGE
+  );
+
+  const changePage = (page) => {
+    if (page < 1 || page > totalPortfolioPages) return;
+    setPortfolioPage(page);
+  };
+
+  // ----------------- RENDER -----------------
   if (loading) {
     return (
       <div className="prof-page-wrapper">
@@ -215,48 +329,26 @@ const ProfessionalProfileView = () => {
 
   const displayName = professional.full_name || professional.email;
 
-  // ---------- MOCK simples de portfólio (enquanto não existe API real) ----------
-  const rawPortfolio =
-    professional.portfolio && Array.isArray(professional.portfolio)
-      ? professional.portfolio
-      : tags.length > 0
-      ? tags.map((t, idx) => ({ id: idx, label: t }))
-      : [
-          { id: 1, label: "Projeto recente" },
-          { id: 2, label: "Trabalho em destaque" },
-          { id: 3, label: "Antes e depois" },
-          { id: 4, label: "Reforma cozinha" },
-          { id: 5, label: "Reparo emergencial" },
-          { id: 6, label: "Projeto especial" },
-          { id: 7, label: "Portfólio 1" },
-          { id: 8, label: "Portfólio 2" },
-          { id: 9, label: "Portfólio 3" },
-          { id: 10, label: "Portfólio 4" },
-        ];
-
-  const totalPages = Math.max(1, Math.ceil(rawPortfolio.length / ITEMS_PER_PAGE));
-  const currentPage = Math.min(portfolioPage, totalPages);
-
-  const portfolioItems = rawPortfolio.slice(
-    (currentPage - 1) * ITEMS_PER_PAGE,
-    currentPage * ITEMS_PER_PAGE
-  );
-
-  const changePage = (page) => {
-    if (page < 1 || page > totalPages) return;
-    setPortfolioPage(page);
-  };
-
   return (
     <div className="prof-page-wrapper">
       <div className="prof-page-inner fade-in">
-        {/* input de arquivo escondido para trocar foto */}
+        {/* input para avatar */}
         <input
           type="file"
           accept="image/*"
           ref={fileInputRef}
           style={{ display: "none" }}
           onChange={handleFileChange}
+        />
+
+        {/* input para portfólio */}
+        <input
+          type="file"
+          accept="image/*,video/*"
+          multiple
+          ref={portfolioInputRef}
+          style={{ display: "none" }}
+          onChange={handlePortfolioFilesChange}
         />
 
         {/* VOLTAR */}
@@ -273,24 +365,17 @@ const ProfessionalProfileView = () => {
               className={`prof-avatar-wrapper ${isOwner ? "clickable" : ""}`}
               onClick={handleAvatarClick}
               title={
-                isOwner
-                  ? "Clique para alterar sua foto de perfil"
-                  : undefined
+                isOwner ? "Clique para alterar sua foto de perfil" : undefined
               }
             >
               {avatarUrl ? (
-                <img
-                  src={avatarUrl}
-                  alt={displayName}
-                  className="prof-avatar"
-                />
+                <img src={avatarUrl} alt={displayName} className="prof-avatar" />
               ) : (
                 <div className="prof-avatar-initials">
                   {displayName.charAt(0).toUpperCase()}
                 </div>
               )}
 
-              {/* Ícone de câmera por cima se for o dono */}
               {isOwner && (
                 <div className="avatar-overlay">
                   <Camera size={18} />
@@ -301,13 +386,9 @@ const ProfessionalProfileView = () => {
             <div className="prof-header-info">
               <div className="prof-name-row">
                 <div>
-                  {/* título: nome se existir, senão e-mail */}
                   <h1 className="prof-name">{displayName}</h1>
-
-                  {/* subtítulo: profissão */}
                   <p className="prof-profession">{professionLabel}</p>
 
-                  {/* se for dono e ainda não tiver nome, uma dica */}
                   {isOwner && !professional.full_name && (
                     <p className="owner-hint-small">
                       Adicione seu nome completo em{" "}
@@ -323,7 +404,6 @@ const ProfessionalProfileView = () => {
                 </div>
 
                 <div className="prof-name-actions">
-                  {/* Seguir só aparece para quem NÃO é o dono */}
                   {!isOwner && (
                     <button
                       type="button"
@@ -403,7 +483,6 @@ const ProfessionalProfileView = () => {
               Enviar e-mail
             </a>
 
-            {/* Denunciar NÃO aparece para o dono */}
             {!isOwner && (
               <button className="btn-outline danger" onClick={handleReport}>
                 <Flag size={16} className="me-1" />
@@ -412,7 +491,7 @@ const ProfessionalProfileView = () => {
             )}
           </div>
 
-          {/* AÇÕES EXTRAS PARA O DONO DO PERFIL */}
+          {/* AÇÕES EXTRAS PARA O DONO */}
           {isOwner && (
             <div className="prof-owner-actions">
               <span className="owner-label">Este é o seu perfil público.</span>
@@ -502,25 +581,72 @@ const ProfessionalProfileView = () => {
 
               {sectionsOpen.portfolio && (
                 <>
-                  <p className="prof-section-text">
-                    Aqui o profissional pode destacar trabalhos realizados, fotos
-                    de serviços, antes e depois, etc.
-                  </p>
+                  {isOwner && (
+                    <div className="portfolio-actions-row">
+                      <button
+                        type="button"
+                        className="btn-outline"
+                        onClick={handleAddMediaClick}
+                      >
+                        <Plus size={16} className="me-1" />
+                        Adicionar mídia
+                      </button>
+                      <span className="hint-text">
+                        Você pode enviar fotos e vídeos dos seus trabalhos.
+                      </span>
+                    </div>
+                  )}
+
+                  {portfolioLoading && (
+                    <p className="prof-section-text">Carregando portfólio...</p>
+                  )}
+                  {portfolioError && (
+                    <p className="error-text">{portfolioError}</p>
+                  )}
+
+                  {!portfolioLoading && paginatedPortfolioItems.length === 0 && (
+                    <p className="prof-section-text">
+                      Ainda não há mídias neste portfólio.
+                    </p>
+                  )}
 
                   <div className="portfolio-grid">
-                    {portfolioItems.map((item) => (
-                      <div
-                        key={item.id ?? item.label}
-                        className="portfolio-item"
-                      >
-                        <div className="portfolio-label">
-                          {item.label || item.titulo || "Projeto"}
+                    {paginatedPortfolioItems.map((item) => {
+                      const url = resolveMediaUrl(item.file);
+                      return (
+                        <div
+                          key={item.id}
+                          className="portfolio-item"
+                        >
+                          {item.is_video ? (
+                            <video
+                              className="portfolio-media"
+                              src={url}
+                              controls
+                            />
+                          ) : (
+                            <img
+                              className="portfolio-media"
+                              src={url}
+                              alt="Mídia do portfólio"
+                            />
+                          )}
+
+                          {isOwner && (
+                            <button
+                              type="button"
+                              className="portfolio-delete-btn"
+                              onClick={() => handleDeleteMedia(item.id)}
+                            >
+                              <Trash2 size={14} />
+                            </button>
+                          )}
                         </div>
-                      </div>
-                    ))}
+                      );
+                    })}
                   </div>
 
-                  {totalPages > 1 && (
+                  {totalPortfolioPages > 1 && (
                     <div className="portfolio-pagination">
                       <button
                         type="button"
@@ -531,26 +657,28 @@ const ProfessionalProfileView = () => {
                         &lt;
                       </button>
 
-                      {Array.from({ length: totalPages }).map((_, idx) => {
-                        const page = idx + 1;
-                        return (
-                          <button
-                            key={page}
-                            type="button"
-                            className={`page-dot ${
-                              page === currentPage ? "active" : ""
-                            }`}
-                            onClick={() => changePage(page)}
-                          >
-                            {page}
-                          </button>
-                        );
-                      })}
+                      {Array.from({ length: totalPortfolioPages }).map(
+                        (_, idx) => {
+                          const page = idx + 1;
+                          return (
+                            <button
+                              key={page}
+                              type="button"
+                              className={`page-dot ${
+                                page === currentPage ? "active" : ""
+                              }`}
+                              onClick={() => changePage(page)}
+                            >
+                              {page}
+                            </button>
+                          );
+                        }
+                      )}
 
                       <button
                         type="button"
                         className="page-btn"
-                        disabled={currentPage === totalPages}
+                        disabled={currentPage === totalPortfolioPages}
                         onClick={() => changePage(currentPage + 1)}
                       >
                         &gt;

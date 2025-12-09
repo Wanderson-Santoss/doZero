@@ -84,8 +84,13 @@ class Profile(models.Model):
     # Dados Adicionais (Para o Profissional)
     bio = models.TextField(_('Sobre Mim'), blank=True, null=True)
     address = models.CharField(_('Endereço/Cidade'), max_length=255, blank=True, null=True)
-    cnpj = models.CharField(_('CNPJ'), max_length=14, blank=True, null=True,
-                            help_text=_('Opcional, para empresas.'))
+    cnpj = models.CharField(
+        _('CNPJ'),
+        max_length=14,
+        blank=True,
+        null=True,
+        help_text=_('Opcional, para empresas.')
+    )
     
     # Campo para o profissional listar suas habilidades e tags
     palavras_chave = models.TextField(
@@ -95,7 +100,7 @@ class Profile(models.Model):
         help_text="Liste todos os termos de busca (Ex: Bolo, Brigadeiro, Cimento, Tinta)"
     )
 
-    # 🔴 NOVO CAMPO: foto de perfil
+    # Foto de perfil
     photo = models.ImageField(
         _('Foto de Perfil'),
         upload_to='profiles/',
@@ -130,3 +135,24 @@ def save_user_profile(sender, instance, **kwargs):
         instance.profile.save()
     except Profile.DoesNotExist:
         Profile.objects.create(user=instance)
+
+
+# --- 5. PortfolioItem (Fotos/Vídeos do Portfólio) ---
+class PortfolioItem(models.Model):
+    profile = models.ForeignKey(
+        Profile,
+        on_delete=models.CASCADE,
+        related_name="portfolio_items"
+    )
+
+    file = models.FileField(
+        upload_to="portfolio/",
+        verbose_name="Foto ou Vídeo"
+    )
+
+    is_video = models.BooleanField(default=False)
+
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"Portfólio de {self.profile.user.email}"
