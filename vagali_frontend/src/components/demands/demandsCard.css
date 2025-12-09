@@ -1,0 +1,99 @@
+.demands-section {
+  padding: 40px;
+  margin-top: 40px;
+}
+
+.demands-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 24px;
+}
+
+.demands-header h2 {
+  font-size: 24px;
+  font-weight: 700;
+  color: #1e3a8a;
+}
+
+.demands-header button {
+  background: transparent;
+  border: none;
+  color: #2563eb;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.demands-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 20px;
+}
+
+/* ✅ CARD NO PADRÃO DOS PROFISSIONAIS */
+.demand-card {
+  background: white;
+  border-radius: 14px;
+  padding: 20px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.06);
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  transition: all 0.25s ease;
+}
+
+.demand-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 14px 30px rgba(0, 0, 0, 0.08);
+}
+
+/* HEADER */
+.demand-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 8px;
+}
+
+.demand-icon {
+  color: #2563eb;
+}
+
+/* TEXTO */
+.demand-card h4 {
+  font-size: 16px;
+  font-weight: 700;
+  color: #111827;
+}
+
+.demand-description {
+  font-size: 14px;
+  color: #6b7280;
+  margin: 8px 0 14px;
+}
+
+/* INFO */
+.demand-info {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 13px;
+  color: #374151;
+  margin-bottom: 14px;
+}
+
+/* BOTÃO */
+.demand-btn {
+  background: #2563eb;
+  border: none;
+  color: white;
+  padding: 10px;
+  border-radius: 8px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s ease;
+}
+
+.demand-btn:hover {
+  background: #1d4ed8;
+}
