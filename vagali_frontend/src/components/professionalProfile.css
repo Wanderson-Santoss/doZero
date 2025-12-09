@@ -568,3 +568,33 @@
   font-weight: 700;
   text-decoration: underline;
 }
+
+
+
+/* avatar clicável para o dono do perfil */
+.prof-avatar-wrapper.clickable {
+  cursor: pointer;
+  position: relative;
+}
+
+.prof-avatar-wrapper.clickable:hover .prof-avatar,
+.prof-avatar-wrapper.clickable:hover .prof-avatar-initials {
+  box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.6);
+}
+
+/* texto de dica só para o dono */
+.owner-hint-small {
+  font-size: 0.75rem;
+  color: rgba(255, 255, 255, 0.8);
+  margin-top: 4px;
+}
+
+/* linkzinho dentro do texto */
+.link-inline {
+  color: #ffd93b;
+  text-decoration: underline;
+  cursor: pointer;
+}
+.link-inline:hover {
+  opacity: 0.85;
+}

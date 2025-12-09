@@ -5,7 +5,6 @@ from django.db import models
 from django.utils.translation import gettext_lazy as _
 from django.db.models.signals import post_save
 from django.dispatch import receiver
-from django.conf import settings # Mantido por segurança, embora o User seja importado diretamente
 
 
 # --- 1. Custom User Manager (Necessário para usar E-mail como login) ---
@@ -72,7 +71,6 @@ class User(AbstractUser):
 # --- 3. Profile Model (Dados adicionais de Cliente/Profissional) ---
 class Profile(models.Model):
     # Relacionamento One-to-One: todo Profile pertence a um User
-    # Usamos a classe User definida acima e related_name='profile'
     user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='profile')
     
     # Dados do Cadastro (Geral)
@@ -80,13 +78,14 @@ class Profile(models.Model):
     cpf = models.CharField(_('CPF'), max_length=11, unique=True, blank=True, null=True) 
     phone_number = models.CharField(_('Telefone'), max_length=15, blank=True, null=True)
     
-    # NOVO CAMPO: CEP (essencial para as demandas)
+    # CEP (essencial para as demandas)
     cep = models.CharField(_('CEP'), max_length=8, blank=True, null=True)
     
     # Dados Adicionais (Para o Profissional)
     bio = models.TextField(_('Sobre Mim'), blank=True, null=True)
     address = models.CharField(_('Endereço/Cidade'), max_length=255, blank=True, null=True)
-    cnpj = models.CharField(_('CNPJ'), max_length=14, blank=True, null=True, help_text=_('Opcional, para empresas.'))
+    cnpj = models.CharField(_('CNPJ'), max_length=14, blank=True, null=True,
+                            help_text=_('Opcional, para empresas.'))
     
     # Campo para o profissional listar suas habilidades e tags
     palavras_chave = models.TextField(
@@ -96,7 +95,15 @@ class Profile(models.Model):
         help_text="Liste todos os termos de busca (Ex: Bolo, Brigadeiro, Cimento, Tinta)"
     )
 
-    # Avaliação Média (Decisão de arquitetura: armazena aqui para acesso rápido)
+    # 🔴 NOVO CAMPO: foto de perfil
+    photo = models.ImageField(
+        _('Foto de Perfil'),
+        upload_to='profiles/',
+        blank=True,
+        null=True
+    )
+
+    # Avaliação Média
     rating = models.DecimalField(
         _('Avaliação Média'), max_digits=3, decimal_places=2, default=0.00
     )
@@ -119,9 +126,7 @@ def create_user_profile(sender, instance, created, **kwargs):
 @receiver(post_save, sender=User)
 def save_user_profile(sender, instance, **kwargs):
     """Salva o objeto Profile sempre que o User é salvo."""
-    # O try/except é crucial para lidar com cenários complexos de banco/migração.
     try:
         instance.profile.save()
     except Profile.DoesNotExist:
-        # Se o Profile não existe, ele é criado (redundância de segurança)
         Profile.objects.create(user=instance)

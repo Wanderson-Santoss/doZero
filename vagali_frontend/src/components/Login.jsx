@@ -1,172 +1,173 @@
+// src/components/Login.jsx
 import React, { useState, useEffect } from "react";
-import axios from "axios";
 import { useNavigate, Link } from "react-router-dom";
 import { Container, Card, Form, Button, Alert, Spinner } from "react-bootstrap";
-import { LogIn } from "lucide-react";
+import { Mail, Lock } from "lucide-react";
 import { useAuth } from "../components/AuthContext";
 import LogoBranco from "../assets/LOGOBRANCO.png";
 
 const Login = () => {
-    const navigate = useNavigate();
-    const { login, isAuthenticated } = useAuth();
+  const navigate = useNavigate();
+  const { login, isAuthenticated, authLoading } = useAuth();
 
-    const [email, setEmail] = useState("");
-    const [password, setPassword] = useState("");
-    const [loading, setLoading] = useState(false);
-    const [error, setError] = useState(null);
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [loadingSubmit, setLoadingSubmit] = useState(false);
+  const [error, setError] = useState(null);
 
-    // Se já está logado, manda direto pro painel
-    useEffect(() => {
-        if (isAuthenticated) navigate("/meu-perfil");
-    }, [isAuthenticated, navigate]);
+  // Se já estiver autenticado, manda pro perfil
+  useEffect(() => {
+    if (isAuthenticated) {
+      navigate("/meu-perfil");
+    }
+  }, [isAuthenticated, navigate]);
 
-    const handleSubmit = async (e) => {
-        e.preventDefault();
-        setError(null);
-        setLoading(true);
+const handleSubmit = async (e) => {
+  e.preventDefault();
+  setError(null);
+  setLoadingSubmit(true);
 
-        try {
-            const success = await login(email, password);
+  try {
+    await login(email, password);
+    navigate("/meu-perfil");
+  } catch (err) {
+    console.error("Erro no login (front):", err.response || err);
 
-            if (success) {
-                navigate("/meu-perfil");
-            } else {
-                setError("Erro desconhecido ao autenticar. Tente novamente.");
-            }
-        } catch (err) {
-            const message =
-                err.response?.data?.detail ||
-                "Credenciais inválidas. Tente novamente.";
-            setError(message);
-        } finally {
-            setLoading(false);
+    let message = "Credenciais inválidas. Verifique e tente novamente.";
+
+    if (err.response && err.response.data) {
+      const data = err.response.data;
+
+      // casos comuns do DRF/Djoser
+      if (data.detail) {
+        message = data.detail;
+      } else if (data.non_field_errors && data.non_field_errors.length > 0) {
+        message = data.non_field_errors.join(" ");
+      } else {
+        // junta todas as mensagens de campo num texto só
+        const msgs = [];
+        for (const field in data) {
+          if (Array.isArray(data[field])) {
+            msgs.push(`${field}: ${data[field].join(" ")}`);
+          } else {
+            msgs.push(`${field}: ${data[field]}`);
+          }
         }
-    };
+        if (msgs.length > 0) {
+          message = msgs.join(" | ");
+        }
+      }
+    }
 
-    return (
-        <Container
-            fluid
-            className="d-flex min-vh-100 p-0 fade-in"
-            style={{ backgroundColor: "#f2f2f2" }}
-        >
-            {/* COLUNA ESQUERDA */}
+    setError(message);
+  } finally {
+    setLoadingSubmit(false);
+  }
+};
+
+
+  return (
+    <Container
+      fluid
+      className="d-flex align-items-center justify-content-center min-vh-100"
+      style={{ backgroundColor: "#f2f2f2" }}
+    >
+      <Card
+        className="p-4 shadow-lg card-login fade-in text-white"
+        style={{ maxWidth: "440px", width: "100%" }}
+      >
+        {/* LOGO */}
+        <div className="d-flex justify-content-center mb-3">
+          <img src={LogoBranco} alt="logo" style={{ width: 70, height: 70 }} />
+        </div>
+
+        <h2 className="text-center mb-3 fw-bold" style={{ color: "#0d6efd" }}>
+          Entrar no VagALI
+        </h2>
+
+        {error && (
+          <Alert variant="danger" className="p-2 small mt-2">
+            {error}
+          </Alert>
+        )}
+
+        {(authLoading || loadingSubmit) && (
+          <div className="text-center mb-2 small">
+            <Spinner animation="border" size="sm" className="me-1" />
+            Verificando seus dados...
+          </div>
+        )}
+
+        <Form onSubmit={handleSubmit}>
+          {/* E-MAIL */}
+          <Form.Group className="mb-3" controlId="email">
+            <Form.Label className="small">E-mail</Form.Label>
             <div
-                className="d-none d-md-flex flex-column justify-content-center align-items-center text-white p-4"
-                style={{
-                    flex: 1,
-                    background: "linear-gradient(135deg, #0d47a1, #1565c0, #1e88e5)",
-                }}
+              className="d-flex align-items-center rounded px-2"
+              style={{ background: "#1b212b" }}
             >
-                <Card
-                    className="p-4 shadow-lg text-center"
-                    style={{
-                        backgroundColor: "rgba(255,255,255,0.12)",
-                        borderRadius: "15px",
-                        border: "1px solid rgba(255,255,255,0.2)",
-                        width: "75%",
-                        backdropFilter: "blur(6px)",
-                    }}
-                >
-                    <img
-                        src={LogoBranco}
-                        alt="logo"
-                        style={{ width: 90, marginBottom: 20 }}
-                    />
-
-                    <h2 className="fw-bold">Bem-vindo de volta!</h2>
-                    <p className="mt-2" style={{ opacity: 0.8 }}>
-                        Entre em sua conta e continue explorando profissionais incríveis.
-                    </p>
-                </Card>
+              <Mail size={18} className="text-primary me-2" />
+              <Form.Control
+                type="email"
+                className="form-control-custom border-0"
+                placeholder="seu.email@exemplo.com"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                required
+              />
             </div>
+          </Form.Group>
 
-            {/* COLUNA DIREITA */}
+          {/* SENHA */}
+          <Form.Group className="mb-3" controlId="password">
+            <Form.Label className="small">Senha</Form.Label>
             <div
-                className="d-flex flex-column justify-content-center align-items-center p-4"
-                style={{ flex: 1.2 }}
+              className="d-flex align-items-center rounded px-2"
+              style={{ background: "#1b212b" }}
             >
-                <Card
-                    className="p-4 shadow-lg card-login"
-                    style={{
-                        width: "100%",
-                        maxWidth: "420px",
-                        backgroundColor: "rgba(11, 12, 16, 0.95)",
-                        borderRadius: "12px",
-                    }}
-                >
-                    <div className="text-center mb-3">
-                        <LogIn size={40} className="text-primary" />
-                        <h2 className="fw-bold mt-2" style={{ color: "#0d6efd" }}>
-                            Fazer Login
-                        </h2>
-                    </div>
-
-                    {error && (
-                        <Alert variant="danger" className="py-2 small">
-                            {error}
-                        </Alert>
-                    )}
-
-                    <Form onSubmit={handleSubmit}>
-                        {/* E-mail */}
-                        <Form.Group className="mb-3">
-                            <Form.Label className="text-white-50 small">E-mail</Form.Label>
-                            <Form.Control
-                                type="email"
-                                placeholder="seu.email@exemplo.com"
-                                className="form-control-custom"
-                                value={email}
-                                onChange={(e) => setEmail(e.target.value)}
-                                required
-                            />
-                        </Form.Group>
-
-                        {/* Senha */}
-                        <Form.Group className="mb-3">
-                            <Form.Label className="text-white-50 small">Senha</Form.Label>
-                            <Form.Control
-                                type="password"
-                                placeholder="Sua senha"
-                                className="form-control-custom"
-                                value={password}
-                                onChange={(e) => setPassword(e.target.value)}
-                                required
-                            />
-                        </Form.Group>
-
-                        {/* Esqueceu a senha */}
-                        <div className="text-end mb-3">
-                            <Link to="/forgot-password" className="link-blue small fw-bold">
-                                Esqueceu sua senha?
-                            </Link>
-                        </div>
-
-                        {/* Botão Login */}
-                        <Button
-                            variant="primary"
-                            type="submit"
-                            className="w-100 fw-bold py-2"
-                            disabled={loading}
-                        >
-                            {loading ? (
-                                <Spinner animation="border" size="sm" />
-                            ) : (
-                                "Entrar"
-                            )}
-                        </Button>
-                    </Form>
-
-                    {/* Link cadastro */}
-                    <p className="text-center small mt-4 text-white-50">
-                        Ainda não tem conta?{" "}
-                        <Link to="/register" className="link-blue fw-bold">
-                            Criar conta
-                        </Link>
-                    </p>
-                </Card>
+              <Lock size={18} className="text-primary me-2" />
+              <Form.Control
+                type="password"
+                className="form-control-custom border-0"
+                placeholder="Sua senha"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                required
+              />
             </div>
-        </Container>
-    );
+          </Form.Group>
+
+          {/* LINK ESQUECEU A SENHA */}
+          <div className="d-flex justify-content-end mb-3">
+            <Link to="/forgot-password" className="link-blue small">
+              Esqueceu sua senha?
+            </Link>
+          </div>
+
+          {/* BOTÃO LOGIN */}
+          <Button
+            type="submit"
+            className="w-100 fw-bold py-2"
+            variant="primary"
+            disabled={loadingSubmit}
+          >
+            {loadingSubmit ? (
+              <Spinner animation="border" size="sm" />
+            ) : (
+              "Entrar"
+            )}
+          </Button>
+        </Form>
+
+        <p className="text-center small text-white-50 mt-4">
+          Ainda não tem conta?{" "}
+          <Link to="/register" className="link-blue fw-bold">
+            Cadastre-se aqui
+          </Link>
+        </p>
+      </Card>
+    </Container>
+  );
 };
 
 export default Login;

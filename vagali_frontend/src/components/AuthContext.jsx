@@ -1,104 +1,172 @@
-import React, { createContext, useContext, useState, useMemo } from 'react';
-import { useNavigate } from 'react-router-dom';
+// src/components/AuthContext.jsx
+import React, {
+  createContext,
+  useContext,
+  useState,
+  useMemo,
+  useEffect,
+} from "react";
+import { useNavigate } from "react-router-dom";
+import axios from "axios";
 
 const AuthContext = createContext(null);
 
-/**
- * Hook para usar o contexto de autenticação em qualquer componente.
- */
-export const useAuth = () => {
-    return useContext(AuthContext);
-};
+// ➜ Endpoints do backend (EXATAMENTE como estão no urls.py)
+const LOGIN_URL = "/api/v1/auth/login/";              // CustomAuthToken
+const PROFILE_ME_URL = "/api/v1/accounts/perfil/me/"; // FullProfileSerializer
 
-/**
- * Provedor de Autenticação que encapsula a aplicação.
- */
+export const useAuth = () => useContext(AuthContext);
+
 export const AuthProvider = ({ children }) => {
-    const navigate = useNavigate();
+  const navigate = useNavigate();
 
-    // ESTADO INICIAL: Tenta carregar o usuário logado
-    const [user, setUser] = useState(() => {
-        // Usa 'authToken' como chave principal (corrigindo a inconsistência de 'userToken')
-        const token = localStorage.getItem('authToken');
-        const storedRole = localStorage.getItem('userRole') || 'Cliente';
+  const [user, setUser] = useState(null);
+  const [authLoading, setAuthLoading] = useState(true);
 
-        if (token) { 
-            // Se houver token, simula um usuário logado
-            return { 
-                id: '123', 
-                role: storedRole, 
-                email: localStorage.getItem('userEmail') || 'teste@vagali.com', // Adicionando email para persistência
-                fullName: 'Usuário Teste Vagali'
-            };
-        }
-        return null; // Usuário deslogado por padrão
-    });
+  // --------------------------------------------------
+  // 1) RESTAURA SESSÃO AO RECARREGAR A PÁGINA
+  // --------------------------------------------------
+  useEffect(() => {
+    const token = localStorage.getItem("authToken");
 
-    // --- FUNÇÕES ESSENCIAIS DE AUTENTICAÇÃO ---
+    if (!token) {
+      setAuthLoading(false);
+      return;
+    }
 
-    // Função de Login (SIMULADA - substitua a lógica interna pela sua chamada de API real)
-    const login = async (email, password) => {
-        // 🚨 Aqui deve entrar sua lógica de chamada de API real (ex: axios.post('/api/auth/login'))
-        // Por enquanto, é uma simulação de sucesso:
-        
-        // Simulação de resposta da API
-        const roleFromApi = 'Cliente'; // Supondo que a API retorne o papel
-        const tokenFromApi = 'simulated_jwt_token';
-        
-        // Simulação de sucesso da requisição
-        localStorage.setItem('authToken', tokenFromApi);
-        localStorage.setItem('userRole', roleFromApi);
-        localStorage.setItem('userEmail', email); // Armazena o email
-        
-        const userData = { 
-            id: '123', 
-            role: roleFromApi, 
-            email, 
-            fullName: 'Usuário Teste Vagali' 
+    axios.defaults.headers.common["Authorization"] = `Token ${token}`;
+
+    axios
+      .get(PROFILE_ME_URL)
+      .then((resp) => {
+        const data = resp.data;
+        const role = data.is_professional ? "Profissional" : "Cliente";
+
+        const userData = {
+          id: data.id,
+          role,
+          email: data.email,
+          fullName: data.profile?.full_name || data.email,
         };
-        setUser(userData); // 🎯 ISTO ATUALIZA O ESTADO GLOBAL
-        
-        // Não redirecionamos aqui. Deixamos o componente de Login fazer o navigate.
-        // O componente Login fará o navigate após chamar esta função.
-        return true;
-    };
 
-    // FUNÇÃO DE LOGOUT
-    const logout = () => {
-        console.log("Usuário deslogado e limpando sessão.");
-        localStorage.removeItem('authToken'); 
-        localStorage.removeItem('userRole'); 
-        localStorage.removeItem('userEmail');
-        setUser(null);                      
-        navigate('/login');                 
-    };
+        localStorage.setItem("userRole", role);
+        localStorage.setItem("userEmail", data.email);
 
-    // Função para alternar o papel (usada no ProfileManagement)
-    const setUserRole = (newRole) => {
-        if (!user) return; // Não muda o papel se não houver usuário logado
-        
-        setUser(prev => ({ 
-            ...prev, 
-            role: newRole 
-        }));
-        localStorage.setItem('userRole', newRole); 
-    };
-    
-    // Valores derivados do estado (memoizados para performance)
-    const contextValue = useMemo(() => ({
-        isAuthenticated: !!user,
-        user,
-        userId: user?.id,
-        userRole: user?.role, 
-        isUserProfessional: user?.role === 'Profissional',
-        login, 
-        logout, 
-        setUserRole
-    }), [user, navigate]);
+        setUser(userData);
+      })
+      .catch((err) => {
+        console.error("Erro ao restaurar sessão:", err.response || err);
+        clearSession();
+      })
+      .finally(() => {
+        setAuthLoading(false);
+      });
+  }, []);
 
-    return (
-        <AuthContext.Provider value={contextValue}>
-            {children}
-        </AuthContext.Provider>
-    );
+  // --------------------------------------------------
+  // HELPERS
+  // --------------------------------------------------
+  const clearSession = () => {
+    localStorage.removeItem("authToken");
+    localStorage.removeItem("userRole");
+    localStorage.removeItem("userEmail");
+    delete axios.defaults.headers.common["Authorization"];
+    setUser(null);
+  };
+
+  // --------------------------------------------------
+  // 2) LOGIN REAL (usa email + password)
+  // --------------------------------------------------
+  const login = async (email, password) => {
+    setAuthLoading(true);
+    try {
+      // ⚠️ BATE COM CustomAuthTokenSerializer (email + password)
+      const resp = await axios.post(LOGIN_URL, {
+        email,
+        password,
+      });
+
+      // ObtainAuthToken padrão retorna {"token": "..."}
+      const token =
+        resp.data.token || resp.data.auth_token || resp.data.key || null;
+
+      if (!token) {
+        console.error("Resposta do login:", resp.data);
+        throw new Error("Token de autenticação não retornado pela API.");
+      }
+
+      localStorage.setItem("authToken", token);
+      localStorage.setItem("userEmail", email);
+
+      axios.defaults.headers.common["Authorization"] = `Token ${token}`;
+
+      // Agora buscamos os dados completos do usuário logado
+      const profileResp = await axios.get(PROFILE_ME_URL);
+      const data = profileResp.data;
+
+      const role = data.is_professional ? "Profissional" : "Cliente";
+
+      const userData = {
+        id: data.id,
+        role,
+        email: data.email,
+        fullName: data.profile?.full_name || data.email,
+      };
+
+      localStorage.setItem("userRole", role);
+      setUser(userData);
+
+      return true;
+    } catch (err) {
+      console.error("Erro no login:", err.response || err);
+      // Deixar o componente Login decidir qual mensagem mostrar
+      throw err;
+    } finally {
+      setAuthLoading(false);
+    }
+  };
+
+  // --------------------------------------------------
+  // 3) LOGOUT
+  // --------------------------------------------------
+  const logout = () => {
+    clearSession();
+    navigate("/login");
+  };
+
+  // --------------------------------------------------
+  // 4) ALTERAR PAPEL (simulação no front)
+  // --------------------------------------------------
+  const setUserRole = (newRole) => {
+    if (!user) return;
+    setUser((prev) => ({
+      ...prev,
+      role: newRole,
+    }));
+    localStorage.setItem("userRole", newRole);
+  };
+
+  // --------------------------------------------------
+  // VALOR EXPOSTO NO CONTEXTO
+  // --------------------------------------------------
+  const contextValue = useMemo(
+    () => ({
+      isAuthenticated: !!user,
+      user,
+      userId: user?.id,
+      userRole: user?.role,
+      isUserProfessional: user?.role === "Profissional",
+      authLoading,
+      login,
+      logout,
+      setUserRole,
+    }),
+    [user, authLoading]
+  );
+
+  return (
+    <AuthContext.Provider value={contextValue}>
+      {children}
+    </AuthContext.Provider>
+  );
 };

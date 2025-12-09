@@ -1,6 +1,10 @@
-from rest_framework import serializers
-from rest_framework.authtoken.serializers import AuthTokenSerializer as DRFAuthTokenSerializer
+# accounts/api/serializers.py
+
+from django.contrib.auth import authenticate
+from django.utils.translation import gettext_lazy as _
 from django.db import transaction
+
+from rest_framework import serializers
 
 from accounts.models import User, Profile
 
@@ -21,6 +25,8 @@ class ProfileSerializer(serializers.ModelSerializer):
     cnpj = serializers.CharField(required=False, allow_blank=True, max_length=14)
     cep = serializers.CharField(required=False, allow_blank=True, max_length=8)
     palavras_chave = serializers.CharField(required=False, allow_blank=True)
+    # 🔴 campo de foto — opcional
+    photo = serializers.ImageField(required=False, allow_null=True)
 
     class Meta:
         model = Profile
@@ -55,6 +61,10 @@ class FullProfileSerializer(serializers.ModelSerializer):
 
     @transaction.atomic
     def update(self, instance, validated_data):
+        """
+        Atualiza o User e o Profile aninhado.
+        Aqui está o ponto crítico para a foto (photo) ser salva de verdade.
+        """
         # dados aninhados do profile
         profile_data = validated_data.pop("profile", None)
         is_professional = validated_data.pop("is_professional", None)
@@ -69,10 +79,7 @@ class FullProfileSerializer(serializers.ModelSerializer):
         instance.save()
 
         # garante que o Profile exista
-        if not hasattr(instance, "profile") or instance.profile is None:
-            profile_instance = Profile.objects.create(user=instance)
-        else:
-            profile_instance = instance.profile
+        profile_instance, _ = Profile.objects.get_or_create(user=instance)
 
         # se mudou de profissional -> cliente, limpamos campos de profissional
         if old_is_professional is True and instance.is_professional is False:
@@ -82,10 +89,17 @@ class FullProfileSerializer(serializers.ModelSerializer):
             profile_instance.palavras_chave = ""
             profile_instance.save()
 
-        # se veio profile_data, atualiza
+        # se veio profile_data, atualiza (INCLUINDO FOTO)
         if profile_data is not None:
-            profile_serializer = self.fields["profile"]
-            profile_serializer.update(profile_instance, profile_data)
+            # ⚠️ AQUI é onde garantimos que o ImageField (photo) é processado corretamente
+            profile_serializer = ProfileSerializer(
+                instance=profile_instance,
+                data=profile_data,
+                partial=True,
+                context=self.context,  # mantém acesso a request/FIL ES etc.
+            )
+            profile_serializer.is_valid(raise_exception=True)
+            profile_serializer.save()
 
         return instance
 
@@ -149,10 +163,9 @@ class ProfessionalSerializer(serializers.ModelSerializer):
 
     def get_photo(self, obj):
         """
-        Quando você adicionar um campo de foto, pode retornar a URL aqui.
-        Por enquanto, devolvemos None e o frontend usa avatar com iniciais.
+        Retorna a URL da foto de perfil, se existir.
         """
-        if hasattr(obj, "profile") and hasattr(obj.profile, "photo") and obj.profile.photo:
+        if hasattr(obj, "profile") and getattr(obj.profile, "photo", None):
             try:
                 return obj.profile.photo.url
             except Exception:
@@ -161,18 +174,10 @@ class ProfessionalSerializer(serializers.ModelSerializer):
 
     def get_demands_count(self, obj):
         """
-        Número de demandas concluidas por esse profissional.
-        Ajuste o import/consulta de acordo com o seu app 'demands'.
+        TODO: ligar com o modelo real de Demanda.
+        Por enquanto retornamos 0 para não quebrar nada.
         """
-        try:
-            from demands.models import Demand  # ajuste se o nome do app/model for outro
-        except Exception:
-            return 0
-
-        return Demand.objects.filter(
-            professional=obj,
-            status="completed",  # ajuste para o status que significa "trabalho concluído"
-        ).count()
+        return 0
 
     def get_profession(self, obj):
         """
@@ -192,8 +197,41 @@ class ProfessionalSerializer(serializers.ModelSerializer):
 # -------------------------------------------------------------------
 # 4. Serializer customizado para LOGIN por e-mail
 # -------------------------------------------------------------------
-class CustomAuthTokenSerializer(DRFAuthTokenSerializer):
+class CustomAuthTokenSerializer(serializers.Serializer):
     """
-    Configura o serializer de login para usar 'email' no lugar de 'username'.
+    Serializer de login que usa EMAIL + PASSWORD.
+    Compatível com CustomUser (USERNAME_FIELD = 'email').
+    Usado por accounts.api.views.CustomAuthToken (ObtainAuthToken).
     """
-    username_field = "email"
+
+    email = serializers.EmailField(
+        label=_("E-mail"),
+        write_only=True,
+    )
+    password = serializers.CharField(
+        label=_("Senha"),
+        style={"input_type": "password"},
+        trim_whitespace=False,
+        write_only=True,
+    )
+
+    def validate(self, attrs):
+        email = attrs.get("email")
+        password = attrs.get("password")
+
+        if email and password:
+            # IMPORTANTE: authenticate aceita "username=<email>" pois seu User.USERNAME_FIELD = 'email'
+            user = authenticate(
+                request=self.context.get("request"),
+                username=email,
+                password=password,
+            )
+            if not user:
+                msg = _("Não foi possível fazer login com essas credenciais.")
+                raise serializers.ValidationError(msg, code="authorization")
+        else:
+            msg = _("É necessário informar e-mail e senha.")
+            raise serializers.ValidationError(msg, code="authorization")
+
+        attrs["user"] = user
+        return attrs

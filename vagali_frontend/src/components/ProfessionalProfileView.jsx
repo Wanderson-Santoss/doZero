@@ -1,5 +1,5 @@
 // src/components/ProfessionalProfileView.jsx
-import React, { useEffect, useState, useMemo } from "react";
+import React, { useEffect, useState, useMemo, useRef } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import axios from "axios";
 import {
@@ -15,26 +15,27 @@ import {
   Flag,
   ChevronDown,
   ChevronUp,
+  Camera, // ícone da camerazinha
 } from "lucide-react";
 import "./professionalProfile.css";
 import { useAuth } from "./AuthContext";
 
+const API_BASE_URL = "http://localhost:8000";
 const PROFESSIONALS_URL = "/api/v1/accounts/profissionais/";
+const ITEMS_PER_PAGE = 9;
 
 const ProfessionalProfileView = () => {
   const { id } = useParams();
   const navigate = useNavigate();
-  const { isAuthenticated } = useAuth();
+
+  const { isAuthenticated, userId, isUserProfessional } = useAuth();
 
   const [professional, setProfessional] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  // paginação portfólio
   const [portfolioPage, setPortfolioPage] = useState(1);
-  const ITEMS_PER_PAGE = 9; // 3x3
 
-  // controle de colapso das seções
   const [sectionsOpen, setSectionsOpen] = useState({
     about: true,
     portfolio: true,
@@ -42,12 +43,22 @@ const ProfessionalProfileView = () => {
     feedbacks: true,
   });
 
+  // input de arquivo + preview local
+  const fileInputRef = useRef(null);
+  const [avatarPreview, setAvatarPreview] = useState(null);
+
   const toggleSection = (key) => {
     setSectionsOpen((prev) => ({ ...prev, [key]: !prev[key] }));
   };
 
+  // é o dono deste perfil?
+  const isOwner =
+    isAuthenticated && isUserProfessional && String(userId) === String(id);
+
+  // carrega dados do profissional
   useEffect(() => {
     if (!id) return;
+
     const fetchProfessional = async () => {
       setLoading(true);
       setError(null);
@@ -55,12 +66,13 @@ const ProfessionalProfileView = () => {
         const resp = await axios.get(`${PROFESSIONALS_URL}${id}/`);
         setProfessional(resp.data);
       } catch (err) {
-        console.error("Erro ao carregar profissional:", err);
+        console.error("Erro ao carregar profissional:", err.response || err);
         setError("Não foi possível carregar o perfil deste profissional.");
       } finally {
         setLoading(false);
       }
     };
+
     fetchProfessional();
   }, [id]);
 
@@ -71,19 +83,15 @@ const ProfessionalProfileView = () => {
 
   const ratingFormatted = rating.toFixed(1);
 
-  // Satisfação aproximada (rating * 20)
   const satisfaction = useMemo(() => {
     if (!professional) return 0;
     const pct = Math.max(0, Math.min(100, rating * 20));
     return Math.round(pct);
   }, [rating, professional]);
 
-  // número real vindo da API (ideal): professional.demands_count
   const demandsCount = professional?.demands_count ?? 0;
+  const statusLabel = "Ativo";
 
-  const statusLabel = "Ativo"; // no futuro pode vir do backend
-
-  // Profissão: no futuro virá de um campo próprio; por enquanto, fallback
   const professionLabel =
     professional?.profession ||
     (professional?.palavras_chave
@@ -106,7 +114,6 @@ const ProfessionalProfileView = () => {
       if (go) navigate("/login");
       return;
     }
-    // futura chamada de API:
     alert("Você agora está seguindo este profissional. (Simulação por enquanto)");
   };
 
@@ -122,9 +129,66 @@ const ProfessionalProfileView = () => {
   };
 
   const handleReport = () => {
-    // aqui no futuro pode abrir modal ou redirecionar para página de denúncia
     alert("Funcionalidade de denúncia será implementada em breve.");
   };
+
+  // quando é o dono, clicar no avatar pergunta e abre o seletor de arquivos
+  const handleAvatarClick = () => {
+    if (!isOwner) return;
+
+    const yes = window.confirm("Deseja alterar sua foto de perfil?");
+    if (yes && fileInputRef.current) {
+      fileInputRef.current.click();
+    }
+  };
+
+  // quando o usuário escolhe o arquivo -> preview + upload pro backend
+  const handleFileChange = async (e) => {
+    const file = e.target.files && e.target.files[0];
+    if (!file) return;
+
+    // preview imediato
+    const previewUrl = URL.createObjectURL(file);
+    setAvatarPreview(previewUrl);
+
+    try {
+      const formData = new FormData();
+      formData.append("photo", file);
+
+      // envia a foto para o backend
+      await axios.post("/api/v1/accounts/perfil/me/photo/", formData, {
+        headers: {
+          "Content-Type": "multipart/form-data",
+          // o Authorization: Token xxx deve estar sendo configurado globalmente
+        },
+      });
+
+      // recarrega os dados do profissional para pegar a URL real da foto salva
+      const resp = await axios.get(`${PROFESSIONALS_URL}${id}/`);
+      setProfessional(resp.data);
+    } catch (err) {
+      console.error("Erro ao atualizar foto:", err.response || err);
+      alert("Não foi possível salvar sua foto de perfil. Tente novamente.");
+    } finally {
+      // limpa o input para permitir escolher o mesmo arquivo de novo, se quiser
+      if (fileInputRef.current) {
+        fileInputRef.current.value = "";
+      }
+    }
+  };
+
+  // 👇 URL final da foto: preview > backend URL > null
+  const avatarUrl = useMemo(() => {
+    if (avatarPreview) return avatarPreview;
+    if (professional?.photo) {
+      // se o backend já devolve começando com /media/...
+      if (professional.photo.startsWith("http")) {
+        return professional.photo; // já é URL completa
+      }
+      return `${API_BASE_URL}${professional.photo}`;
+    }
+    return null;
+  }, [avatarPreview, professional]);
 
   if (loading) {
     return (
@@ -151,7 +215,7 @@ const ProfessionalProfileView = () => {
 
   const displayName = professional.full_name || professional.email;
 
-  // PORTFÓLIO (mock até ter API)
+  // ---------- MOCK simples de portfólio (enquanto não existe API real) ----------
   const rawPortfolio =
     professional.portfolio && Array.isArray(professional.portfolio)
       ? professional.portfolio
@@ -186,45 +250,91 @@ const ProfessionalProfileView = () => {
   return (
     <div className="prof-page-wrapper">
       <div className="prof-page-inner fade-in">
-        {/* BOTÃO VOLTAR */}
+        {/* input de arquivo escondido para trocar foto */}
+        <input
+          type="file"
+          accept="image/*"
+          ref={fileInputRef}
+          style={{ display: "none" }}
+          onChange={handleFileChange}
+        />
+
+        {/* VOLTAR */}
         <button className="back-btn" onClick={() => navigate(-1)}>
           <ArrowLeft size={16} className="me-2" />
           Voltar
         </button>
 
-        {/* HEADER DO PERFIL */}
+        {/* HEADER */}
         <section className="prof-header-card">
           <div className="prof-header-main">
-            {/* Avatar */}
-            {professional.photo ? (
-              <img
-                src={professional.photo}
-                alt={displayName}
-                className="prof-avatar"
-              />
-            ) : (
-              <div className="prof-avatar-initials">
-                {displayName.charAt(0).toUpperCase()}
-              </div>
-            )}
+            {/* AVATAR (clicável se for o dono) */}
+            <div
+              className={`prof-avatar-wrapper ${isOwner ? "clickable" : ""}`}
+              onClick={handleAvatarClick}
+              title={
+                isOwner
+                  ? "Clique para alterar sua foto de perfil"
+                  : undefined
+              }
+            >
+              {avatarUrl ? (
+                <img
+                  src={avatarUrl}
+                  alt={displayName}
+                  className="prof-avatar"
+                />
+              ) : (
+                <div className="prof-avatar-initials">
+                  {displayName.charAt(0).toUpperCase()}
+                </div>
+              )}
 
-            {/* Nome + info */}
+              {/* Ícone de câmera por cima se for o dono */}
+              {isOwner && (
+                <div className="avatar-overlay">
+                  <Camera size={18} />
+                </div>
+              )}
+            </div>
+
             <div className="prof-header-info">
-              {/* linha com nome + seguir + compartilhar */}
               <div className="prof-name-row">
                 <div>
+                  {/* título: nome se existir, senão e-mail */}
                   <h1 className="prof-name">{displayName}</h1>
+
+                  {/* subtítulo: profissão */}
                   <p className="prof-profession">{professionLabel}</p>
+
+                  {/* se for dono e ainda não tiver nome, uma dica */}
+                  {isOwner && !professional.full_name && (
+                    <p className="owner-hint-small">
+                      Adicione seu nome completo em{" "}
+                      <span
+                        className="link-inline"
+                        onClick={() => navigate("/edit-profile")}
+                      >
+                        Editar informações profissionais
+                      </span>{" "}
+                      para aparecer aqui no lugar do e-mail.
+                    </p>
+                  )}
                 </div>
+
                 <div className="prof-name-actions">
-                  <button
-                    type="button"
-                    className="btn-chip"
-                    onClick={handleFollow}
-                  >
-                    <Heart size={14} className="me-1" />
-                    Seguir
-                  </button>
+                  {/* Seguir só aparece para quem NÃO é o dono */}
+                  {!isOwner && (
+                    <button
+                      type="button"
+                      className="btn-chip"
+                      onClick={handleFollow}
+                    >
+                      <Heart size={14} className="me-1" />
+                      Seguir
+                    </button>
+                  )}
+
                   <button
                     type="button"
                     className="btn-chip ghost"
@@ -270,7 +380,7 @@ const ProfessionalProfileView = () => {
             </div>
           </div>
 
-          {/* Ações rápidas (chat / calendário / email / denunciar) */}
+          {/* AÇÕES RÁPIDAS */}
           <div className="prof-header-actions">
             <button
               className="btn-primary"
@@ -293,16 +403,43 @@ const ProfessionalProfileView = () => {
               Enviar e-mail
             </a>
 
-            <button
-              className="btn-outline danger"
-              onClick={handleReport}
-            >
-              <Flag size={16} className="me-1" />
-              Denunciar
-            </button>
+            {/* Denunciar NÃO aparece para o dono */}
+            {!isOwner && (
+              <button className="btn-outline danger" onClick={handleReport}>
+                <Flag size={16} className="me-1" />
+                Denunciar
+              </button>
+            )}
           </div>
 
-          {/* LINHA DE ESTATÍSTICAS */}
+          {/* AÇÕES EXTRAS PARA O DONO DO PERFIL */}
+          {isOwner && (
+            <div className="prof-owner-actions">
+              <span className="owner-label">Este é o seu perfil público.</span>
+              <div className="owner-buttons">
+                <button
+                  className="btn-outline"
+                  onClick={() => navigate("/meu-perfil")}
+                >
+                  Gerenciar meus dados
+                </button>
+                <button
+                  className="btn-outline"
+                  onClick={() => navigate(`/professional/${id}/schedule`)}
+                >
+                  Gerenciar agenda
+                </button>
+                <button
+                  className="btn-outline"
+                  onClick={() => navigate("/edit-profile")}
+                >
+                  Editar informações profissionais
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* ESTATÍSTICAS */}
           <div className="prof-stats-row">
             <div className="stat-card">
               <div className="stat-main stat-red">{satisfaction}%</div>
@@ -321,9 +458,9 @@ const ProfessionalProfileView = () => {
 
         {/* CONTEÚDO PRINCIPAL */}
         <div className="prof-content-grid">
-          {/* COLUNA ESQUERDA: Sobre + Portfólio + Feedbacks */}
+          {/* COLUNA ESQUERDA */}
           <div className="prof-column">
-            {/* SOBRE O PROFISSIONAL */}
+            {/* SOBRE */}
             <section className="prof-card">
               <div
                 className="prof-card-header"
@@ -349,7 +486,7 @@ const ProfessionalProfileView = () => {
               )}
             </section>
 
-            {/* PORTFÓLIO & MÍDIA */}
+            {/* PORTFÓLIO */}
             <section className="prof-card">
               <div
                 className="prof-card-header"
@@ -366,14 +503,16 @@ const ProfessionalProfileView = () => {
               {sectionsOpen.portfolio && (
                 <>
                   <p className="prof-section-text">
-                    Aqui o profissional pode destacar trabalhos realizados, fotos de
-                    serviços, antes e depois, etc.
+                    Aqui o profissional pode destacar trabalhos realizados, fotos
+                    de serviços, antes e depois, etc.
                   </p>
 
-                  {/* GRID 3x3 */}
                   <div className="portfolio-grid">
                     {portfolioItems.map((item) => (
-                      <div key={item.id ?? item.label} className="portfolio-item">
+                      <div
+                        key={item.id ?? item.label}
+                        className="portfolio-item"
+                      >
                         <div className="portfolio-label">
                           {item.label || item.titulo || "Projeto"}
                         </div>
@@ -381,7 +520,6 @@ const ProfessionalProfileView = () => {
                     ))}
                   </div>
 
-                  {/* PAGINAÇÃO */}
                   {totalPages > 1 && (
                     <div className="portfolio-pagination">
                       <button
@@ -419,16 +557,11 @@ const ProfessionalProfileView = () => {
                       </button>
                     </div>
                   )}
-
-                  <div className="hint-text" style={{ marginTop: "10px" }}>
-                    Em uma próxima etapa, isso pode ser ligado a um cadastro real
-                    de fotos e vídeos, como no Instagram.
-                  </div>
                 </>
               )}
             </section>
 
-            {/* FEEDBACKS / AVALIAÇÕES */}
+            {/* FEEDBACKS */}
             <section className="prof-card">
               <div
                 className="prof-card-header"
@@ -451,7 +584,7 @@ const ProfessionalProfileView = () => {
             </section>
           </div>
 
-          {/* COLUNA DIREITA: Informações gerais */}
+          {/* COLUNA DIREITA */}
           <section className="prof-card">
             <div
               className="prof-card-header"
