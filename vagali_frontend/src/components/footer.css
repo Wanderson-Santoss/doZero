@@ -1,0 +1,58 @@
+/* ==============================
+   FOOTER – VAGALI
+================================ */
+
+footer {
+  font-size: 0.9rem;                 /* diminui um pouco o texto */
+}
+
+/* Títulos do footer */
+footer h4,
+footer h6 {
+  letter-spacing: 0.5px;
+}
+
+/* Links */
+footer a {
+  color: #e4e6eb;
+  transition: color 0.25s ease, transform 0.25s ease;
+}
+
+/* Hover nos links */
+footer a:hover {
+  color: #4f8cff; /* azul moderno */
+  transform: translateX(3px);
+}
+
+/* Ícones das redes sociais */
+footer svg {
+  transition: transform 0.25s ease, color 0.25s ease;
+}
+
+/* Hover nos ícones */
+footer a:hover svg {
+  transform: scale(1.15);
+  color: #4f8cff;
+}
+
+/* Linha de copyright */
+footer .border-top {
+  opacity: 0.5;
+}
+
+/* Espaçamento mais compacto */
+footer .container {
+  padding-top: 1.5rem;
+  padding-bottom: 1rem;
+}
+
+/* Mobile otimização */
+@media (max-width: 768px) {
+  footer {
+    text-align: center;
+  }
+
+  footer .d-flex {
+    justify-content: center;
+  }
+}
