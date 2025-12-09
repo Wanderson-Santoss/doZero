@@ -1,48 +1,120 @@
-.categories-wrapper {
-    padding: 60px 20px 20px;
-    margin-top: 20px;
+/* src/components/home/categories.css */
+
+.categories-section {
+  padding: 32px 5vw 16px;
 }
 
-.categories-title {
-    text-align: center;
-    font-size: 1.9rem;
-    font-weight: 700;
-    color: #0d6efd;
-    margin-bottom: 35px;
+.categories-header h2 {
+  font-size: 1.6rem;
+  font-weight: 700;
+  color: #111827;
 }
 
-.categories-container {
-    display: flex;
-    gap: 20px;
-    flex-wrap: wrap;
-    justify-content: center;
+.categories-header p {
+  margin-top: 4px;
+  color: #6b7280;
+  font-size: 0.95rem;
+}
+
+.categories-grid {
+  margin-top: 20px;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 12px;
 }
 
 .category-card {
-    background: white;
-    width: 150px;
-    height: 150px;
-    border-radius: 16px;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    cursor: pointer;
-    box-shadow: 0px 4px 18px rgba(0,0,0,0.08);
-    transition: 0.3s;
+  border: none;
+  border-radius: 12px;
+  padding: 14px 12px;
+  background: #ffffff;
+  box-shadow: 0 4px 10px rgba(15, 23, 42, 0.06);
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 8px;
+  cursor: pointer;
+  transition: transform 0.15s ease, box-shadow 0.15s ease,
+    background-color 0.15s ease;
 }
 
 .category-card:hover {
-    transform: translateY(-5px);
-    box-shadow: 0px 8px 25px rgba(0,0,0,0.12);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 18px rgba(15, 23, 42, 0.12);
+  background: #eef2ff;
 }
 
-.category-icon {
-    color: #0d6efd;
-    margin-bottom: 10px;
+.category-icon-wrapper {
+  width: 36px;
+  height: 36px;
+  border-radius: 999px;
+  background: #e5e7ff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
-.category-name {
-    font-weight: 600;
-    color: #333;
+.category-label {
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: #111827;
+}
+
+.more-card {
+  background: #111827;
+  color: #f9fafb;
+}
+
+.more-card .category-icon-wrapper {
+  background: #1f2937;
+  color: #f9fafb;
+}
+
+/* Painel "Mais serviços" */
+
+.categories-more-panel {
+  margin-top: 16px;
+  background: #ffffff;
+  border-radius: 16px;
+  box-shadow: 0 10px 30px rgba(15, 23, 42, 0.15);
+  padding: 16px 18px 18px;
+}
+
+.more-title {
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: #4b5563;
+  margin-bottom: 10px;
+}
+
+.more-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 8px;
+}
+
+.more-item {
+  border: none;
+  background: transparent;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 4px;
+  border-radius: 999px;
+  cursor: pointer;
+  transition: background-color 0.15s ease, transform 0.1s ease;
+}
+
+.more-item:hover {
+  background: #eef2ff;
+  transform: translateY(-1px);
+}
+
+.more-icon {
+  color: #4f46e5;
+}
+
+.more-label {
+  font-size: 0.9rem;
+  color: #111827;
 }

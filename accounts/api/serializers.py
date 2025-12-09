@@ -6,7 +6,7 @@ from django.db import transaction
 
 from rest_framework import serializers
 
-from accounts.models import User, Profile, PortfolioItem
+from accounts.models import User, Profile
 
 
 # -------------------------------------------------------------------
@@ -26,9 +26,12 @@ class ProfileSerializer(serializers.ModelSerializer):
     cep = serializers.CharField(required=False, allow_blank=True, max_length=8)
     palavras_chave = serializers.CharField(required=False, allow_blank=True)
     photo = serializers.ImageField(required=False, allow_null=True)
+    # 🔴 NOVO: profissão principal
+    profession = serializers.CharField(required=False, allow_blank=True, max_length=100)
 
     class Meta:
         model = Profile
+        # não enviamos o user nem a rating diretamente
         exclude = ("user", "rating")
         read_only_fields = ("rating",)
 
@@ -79,6 +82,7 @@ class FullProfileSerializer(serializers.ModelSerializer):
             profile_instance.address = ""
             profile_instance.cnpj = ""
             profile_instance.palavras_chave = ""
+            profile_instance.profession = ""
             profile_instance.save()
 
         if profile_data is not None:
@@ -146,9 +150,6 @@ class ProfessionalSerializer(serializers.ModelSerializer):
         return ""
 
     def get_photo(self, obj):
-        """
-        Retorna a URL da foto de perfil, se existir.
-        """
         if hasattr(obj, "profile") and getattr(obj.profile, "photo", None):
             try:
                 return obj.profile.photo.url
@@ -157,11 +158,14 @@ class ProfessionalSerializer(serializers.ModelSerializer):
         return None
 
     def get_demands_count(self, obj):
-        # Aqui no futuro podemos integrar com o app de demandas
         return 0
 
     def get_profession(self, obj):
-        if hasattr(obj, "profile") and hasattr(obj.profile, "profession") and obj.profile.profession:
+        """
+        Agora usamos diretamente profile.profession.
+        Se não tiver, caímos no fallback das palavras-chave.
+        """
+        if hasattr(obj, "profile") and getattr(obj.profile, "profession", None):
             return obj.profile.profession
 
         if hasattr(obj, "profile") and obj.profile.palavras_chave:
@@ -172,32 +176,9 @@ class ProfessionalSerializer(serializers.ModelSerializer):
 
 
 # -------------------------------------------------------------------
-# 4. PORTFOLIO ITEM SERIALIZER
-# -------------------------------------------------------------------
-class PortfolioItemSerializer(serializers.ModelSerializer):
-    file_url = serializers.SerializerMethodField()
-
-    class Meta:
-        model = PortfolioItem
-        fields = ("id", "file_url", "is_video", "created_at")
-
-    def get_file_url(self, obj):
-        request = self.context.get("request")
-        if request is not None:
-            return request.build_absolute_uri(obj.file.url)
-        return obj.file.url
-
-
-# -------------------------------------------------------------------
-# 5. Serializer customizado para LOGIN por e-mail
+# 4. Serializer customizado para LOGIN por e-mail
 # -------------------------------------------------------------------
 class CustomAuthTokenSerializer(serializers.Serializer):
-    """
-    Serializer de login que usa EMAIL + PASSWORD.
-    Compatível com CustomUser (USERNAME_FIELD = 'email').
-    Usado por accounts.api.views.CustomAuthToken (ObtainAuthToken).
-    """
-
     email = serializers.EmailField(
         label=_("E-mail"),
         write_only=True,

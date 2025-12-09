@@ -35,16 +35,30 @@ const API_BASE_URL = "http://localhost:8000";
 const DEFAULT_AVATAR =
   "https://via.placeholder.com/150/007bff/ffffff?text=FOTO";
 
+// opções prontas de profissão
+const PROFESSION_OPTIONS = [
+  "Pedreiro",
+  "Carpinteiro",
+  "Barbeiro",
+  "Eletricista",
+  "Encanador",
+  "Pintor",
+  "Marceneiro",
+  "Jardineiro",
+  "Manicure / Pedicure",
+  "Cabeleireiro",
+  "Técnico de Informática",
+  "Professor Particular",
+  "Cuidador(a)",
+  "Motorista",
+  "Outra profissão",
+];
+
 const ProfileManagement = () => {
   const [isInfoCollapsed, setIsInfoCollapsed] = useState(false);
 
-  const {
-    userRole,
-    setUserRole,
-    isUserProfessional,
-    userId,
-    logout,
-  } = useAuth();
+  const { userRole, setUserRole, isUserProfessional, userId, logout } =
+    useAuth();
 
   const navigate = useNavigate();
 
@@ -60,6 +74,7 @@ const ProfileManagement = () => {
     neighborhood: "",
     city: "",
     state: "",
+    profession: "", // 🔴 NOVO
   });
 
   const [isSaving, setIsSaving] = useState(false);
@@ -105,14 +120,14 @@ const ProfileManagement = () => {
     }
   }, []);
 
-  // 🔹 CARREGA O PERFIL UMA ÚNICA VEZ AO MONTAR
+  // carrega o perfil 1x
   useEffect(() => {
     const fetchProfile = async () => {
       setLoadingProfile(true);
       setLoadError(null);
       try {
         const resp = await axios.get("/api/v1/accounts/perfil/me/");
-        const { email, profile } = resp.data || {};
+        const { email, is_professional, profile } = resp.data || {};
 
         setProfileData((prev) => ({
           ...prev,
@@ -121,18 +136,18 @@ const ProfileManagement = () => {
           phone: profile?.phone_number || "",
           cep: profile?.cep || "",
           street: profile?.address || "",
-          number: "",
-          complement: "",
-          neighborhood: "",
-          city: "",
-          state: "",
           profilePictureUrl: profile?.photo
             ? profile.photo.startsWith("http")
               ? profile.photo
               : `${API_BASE_URL}${profile.photo}`
             : DEFAULT_AVATAR,
+          profession: profile?.profession || "",
         }));
-        // ⚠️ NÃO chamamos setUserRole aqui pra evitar loop
+
+        // opcional: alinhar papel do contexto ao backend
+        if (typeof setUserRole === "function") {
+          setUserRole(is_professional ? "Profissional" : "Cliente");
+        }
       } catch (err) {
         console.error("Erro ao carregar perfil:", err.response || err);
         setLoadError("Não foi possível carregar seus dados de perfil.");
@@ -142,7 +157,7 @@ const ProfileManagement = () => {
     };
 
     fetchProfile();
-  }, []); // <-- array vazio: executa apenas 1 vez
+  }, []); // só uma vez
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -209,6 +224,7 @@ const ProfileManagement = () => {
       cep,
       fullName,
       phone,
+      profession,
     } = profileData;
 
     const addressParts = [];
@@ -229,6 +245,7 @@ const ProfileManagement = () => {
         phone_number: phone,
         cep: cep,
         address: composedAddress,
+        profession: profession, // 🔴 ENVIA PRO BACKEND
       },
     };
 
@@ -243,6 +260,7 @@ const ProfileManagement = () => {
         phone: profile?.phone_number || prev.phone,
         cep: profile?.cep || prev.cep,
         street: profile?.address || prev.street,
+        profession: profile?.profession || prev.profession,
       }));
 
       if (typeof setUserRole === "function") {
@@ -366,6 +384,7 @@ const ProfileManagement = () => {
               <div id="info-collapse-body">
                 <Card.Body>
                   <Form onSubmit={handleSubmit}>
+                    {/* DADOS PESSOAIS */}
                     <h5 className="mb-3 text-muted">Dados Pessoais</h5>
                     <Row className="mb-3">
                       <Col md={6}>
@@ -388,8 +407,7 @@ const ProfileManagement = () => {
                             className="fw-bold"
                           />
                           <small className="text-danger mt-1">
-                            Este é seu login principal e não pode ser
-                            alterado.
+                            Este é seu login principal e não pode ser alterado.
                           </small>
                         </div>
                       </Col>
@@ -404,6 +422,35 @@ const ProfileManagement = () => {
                       />
                     </Form.Group>
 
+                    {/* 🔴 INFORMAÇÕES PROFISSIONAIS (apenas se papel = Profissional) */}
+                    {userRole === "Profissional" && (
+                      <>
+                        <hr />
+                        <h5 className="mb-3 text-muted d-flex align-items-center">
+                          <Briefcase size={20} className="me-2" /> Informações
+                          profissionais
+                        </h5>
+                        <Row className="mb-3">
+                          <Col md={6}>
+                            <Form.Label>Profissão principal</Form.Label>
+                            <Form.Select
+                              name="profession"
+                              value={profileData.profession}
+                              onChange={handleChange}
+                            >
+                              <option value="">Selecione...</option>
+                              {PROFESSION_OPTIONS.map((opt) => (
+                                <option key={opt} value={opt}>
+                                  {opt}
+                                </option>
+                              ))}
+                            </Form.Select>
+                          </Col>
+                        </Row>
+                      </>
+                    )}
+
+                    {/* ENDEREÇO */}
                     <hr />
                     <h5 className="mb-3 text-muted d-flex align-items-center">
                       <MapPin size={20} className="me-2" /> Endereço
@@ -558,6 +605,7 @@ const ProfileManagement = () => {
         </Col>
 
         <Col md={4}>
+          {/* PAPEL ATUAL */}
           <Card className="shadow-lg mb-4 text-center">
             <Card.Body>
               <h5 className="mb-3">Seu Papel Atual:</h5>
@@ -582,21 +630,7 @@ const ProfileManagement = () => {
             </Card.Body>
           </Card>
 
-          {!isUserProfessional && (
-            <Card className="shadow-sm mb-4 border-info">
-              <Card.Body className="d-grid gap-2">
-                <Button
-                  as={Link}
-                  to="/profissionais-seguidos"
-                  variant="outline-info"
-                  className="fw-bold"
-                >
-                  <Heart size={20} className="me-2" /> Profissionais Seguidos
-                </Button>
-              </Card.Body>
-            </Card>
-          )}
-
+          {/* MENSAGENS */}
           <Card className="shadow-lg mb-4 border-success">
             <Card.Body className="d-grid gap-2">
               <Button
@@ -610,6 +644,21 @@ const ProfileManagement = () => {
             </Card.Body>
           </Card>
 
+          {/* 🔴 NOVO: SEGUINDO */}
+          <Card className="shadow-sm mb-4 border-info">
+            <Card.Body className="d-grid gap-2">
+              <Button
+                as={Link}
+                to="/profissionais-seguidos"
+                variant="outline-info"
+                className="fw-bold"
+              >
+                <Heart size={20} className="me-2" /> Seguindo
+              </Button>
+            </Card.Body>
+          </Card>
+
+          {/* SEGURANÇA */}
           <Card className="shadow-sm mb-4">
             <Card.Header
               className="fw-bold bg-light"

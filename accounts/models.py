@@ -100,12 +100,21 @@ class Profile(models.Model):
         help_text="Liste todos os termos de busca (Ex: Bolo, Brigadeiro, Cimento, Tinta)"
     )
 
-    # Foto de perfil
+    # 🔴 Foto de perfil
     photo = models.ImageField(
         _('Foto de Perfil'),
         upload_to='profiles/',
         blank=True,
         null=True
+    )
+
+    # 🔴 NOVO: profissão principal (pedreiro, barbeiro etc.)
+    profession = models.CharField(
+        _('Profissão principal'),
+        max_length=100,
+        blank=True,
+        null=True,
+        help_text=_('Ex: Pedreiro, Carpinteiro, Barbeiro...')
     )
 
     # Avaliação Média
@@ -137,7 +146,7 @@ def save_user_profile(sender, instance, **kwargs):
         Profile.objects.create(user=instance)
 
 
-# --- 5. PortfolioItem (Fotos/Vídeos do Portfólio) ---
+# --- 5. Itens de Portfólio (fotos / vídeos) ---
 class PortfolioItem(models.Model):
     profile = models.ForeignKey(
         Profile,
