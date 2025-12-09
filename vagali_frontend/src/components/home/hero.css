@@ -1,0 +1,73 @@
+.hero-section {
+    width: 100%;
+    min-height: 300px;
+    padding: 80px 20px;
+
+    background:
+        linear-gradient(120deg, #4f46e5, #3b82f6),
+        url("https://images.unsplash.com/photo-1521737604893-d14cc237f11d") center/cover no-repeat;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+
+    color: white;
+    overflow: hidden;
+}
+
+/* Overlay NÃO bloqueia clique */
+.hero-overlay {
+    position: absolute;
+    inset: 0;
+    background: rgba(0,0,0,0.30);
+    pointer-events: none;
+}
+
+.hero-content {
+    position: relative;
+    max-width: 780px;
+    text-align: center;
+    padding: 20px;
+}
+
+.hero-title {
+    font-size: 2.8rem;
+    font-weight: 800;
+    line-height: 1.2;
+}
+
+.highlight {
+    color: #facc15;
+}
+
+.hero-subtitle {
+    margin-top: 12px;
+    font-size: 1.1rem;
+    opacity: 0.9;
+}
+
+.hero-button {
+    margin-top: 22px;
+    background: #facc15;
+    color: #1f1f1f;
+    border: none;
+    padding: 12px 26px;
+    border-radius: 10px;
+    font-weight: 600;
+    font-size: 1.1rem;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    transition: 0.3s;
+}
+
+.hero-button:hover {
+    background: #ffe266;
+}
+
+@media (max-width: 700px) {
+    .hero-title {
+        font-size: 2rem;
+    }
+}

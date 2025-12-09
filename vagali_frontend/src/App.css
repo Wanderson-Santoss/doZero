@@ -2,284 +2,119 @@
 /* VARIÁVEIS GLOBAIS */
 /* ========================================================== */
 :root {
-    --primary-color: #993213; /* Marrom Principal (Vagali) */
-    --accent-color: #f59e0b; /* Amarelo/Laranja de destaque */
-    --light-bg: #f8fafc; /* Fundo claro padrão (se necessário) */
-    --dark-text: #1e293b; /* Texto escuro */
-    --light-text: #64748b; /* Texto claro (cinza) */
-    --header-bg: #f1f5f9; /* Fundo Escuro para a página principal e Header */
-    --vagali-dark-card: #ffffff; /* Fundo dos cards escuros (Auth/Perfil) */
-    --vagali-link: #4f46e5; /* Cor de links e textos clicáveis */
-    --btn-success-color: #2E8B57; /* Verde para botões de Cadastro */
-  }
-  
-
-
-
-
-/* Estilização para inputs em tema CLARO */
-.form-control-dark {
-    background-color: var(--light-bg); /* Fundo claro */
-    border: 1px solid #ccc; /* Borda cinza suave */
-    color: var(--dark-text); /* Texto escuro */
-}
-.form-control-dark:focus {
-    background-color: var(--light-bg);
-    border-color: var(--primary-color);
-    color: var(--dark-text);
-    box-shadow: 0 0 0 0.25rem rgba(153, 50, 19, 0.25); 
+    --primary-color: #993213; 
+    --accent-color: #f59e0b;  
+    --light-bg: #f8fafc;      
+    --dark-text: #1e293b;     
+    --light-text: #64748b;    
+    --header-bg: #f2f2f2;     
+    --vagali-dark-card: #ffffff;
+    --vagali-link: #4f46e5;
+    --btn-success-color: #2E8B57;
 }
 
-
-/* Garante que o corpo use o fundo claro principal */
-body {
-    background-color: var(--light-bg);
-    color: var(--dark-text);
-}
-
-  /* 1. Estilos Globais e Reset */
-  html, body, #root {
+/* ========================================================== */
+/* RESET GLOBAL */
+/* ========================================================== */
+html, body, #root {
     height: 100%;
     margin: 0;
     padding: 0;
     overflow-x: hidden;
-  }
-  
-  body {
-    font-family: 'Segoe UI', system-ui, sans-serif;
+}
+
+body {
+    font-family: "Inter", sans-serif;
     background-color: var(--header-bg);
-    color: var(--light-bg);
-    min-height: 100vh;
-  }
-  
-  .min-vh-100 {
-    min-height: 100vh;
-  }
-  
-  /* 2. Estilos de Formulários e Componentes Comuns */
-  .form-control:focus {
+    color: var(--dark-text);
+}
+
+/* ========================================================== */
+/* INPUTS PADRÃO */
+/* ========================================================== */
+.form-control:focus {
     box-shadow: 0 0 0 0.25rem rgba(153, 50, 19, 0.25);
     border-color: var(--primary-color);
-  }
-  
-  .img-slide {
-    width: 100%;
-    height: 400px;
-    object-fit: cover;
-  }
-  
-  .categoria-btn {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    text-align: center;
+}
+
+/* Tema claro */
+.form-control-dark {
+    background-color: #fff;
+    border: 1px solid #ccc;
+    color: var(--dark-text);
+}
+.form-control-dark:focus {
+    border-color: var(--primary-color);
+}
+
+/* Inputs modernos escuros (Auth) */
+.form-control-custom {
+    background: #1b212b !important;
+    border: 1px solid #2b3039 !important;
+    color: #fff !important;
+    padding: 10px;
+    border-radius: 8px;
+}
+.form-control-custom:focus {
+    border-color: #0d6efd !important;
+}
+
+/* ========================================================== */
+/* LINKS */
+/* ========================================================== */
+.link-blue {
+    color: #0d6efd !important;
+}
+.link-blue:hover {
+    text-decoration: underline;
+}
+
+/* ========================================================== */
+/* CARD LOGIN */
+/* ========================================================== */
+.card-login {
+    background-color: #1f2630 !important;
+    border-radius: 14px !important;
+    border: 1px solid #0d6efd50 !important;
+}
+
+/* ========================================================== */
+/* CATEGORIAS */
+/* ========================================================== */
+.categoria-btn {
     background: white;
     border: 1px solid #e2e8f0;
     border-radius: 12px;
-    padding: 1.2rem 0.5rem;
+    padding: 1.2rem .5rem;
     cursor: pointer;
-    transition: all 0.3s ease;
-    height: 100%;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.05);
-  }
-  
-  .categoria-btn i {
-    font-size: 2rem;
-    color: var(--primary-color);
-    margin-bottom: 0.5rem;
-  }
-  
-  .categoria-btn:hover {
+    transition: 0.3s ease;
+    text-align: center;
+}
+.categoria-btn:hover {
     transform: translateY(-5px);
-    box-shadow: 0 10px 20px rgba(0,0,0,0.1);
     border-color: var(--accent-color);
-  }
-  
-  /* Cards de Perfil */
-  .card-perfil {
-    border-radius: 16px;
-    border: none;
-    transition: all 0.3s ease;
-    background: white;
-  }
-  
-  .card-perfil:hover {
-    transform: translateY(-5px);
-    box-shadow: 0 15px 30px rgba(0,0,0,0.1) !important;
-  }
-  
-  .perfil-img {
-    border: 3px solid var(--primary-color);
-  }
-  
-  /* ========================================================== */
-  /* 3. ProfileCard */
-  /* ========================================================== */
-  .profile-card {
-    min-height: 280px;
-    transition: transform 0.2s, box-shadow 0.2s;
-    background-color: var(--vagali-dark-card) !important;
-    border-radius: 8px;
-  }
-  
-  .profile-card:hover {
-    transform: translateY(-5px);
-    box-shadow: 0 10px 20px rgba(0,0,0,0.5) !important;
-  }
-  
-  .avatar-initials {
-    border: 2px solid var(--primary-color);
-  }
-  
-  .text-light-gray {
-    color: #ccc !important;
-    display: -webkit-box;
-    -webkit-line-clamp: 3;
-    -webkit-box-orient: vertical;
-    overflow: hidden;
-    text-overflow: ellipsis;
-  }
-  
-  /* ========================================================== */
-  /* 4. Barra de Busca */
-  /* ========================================================== */
-  .form-control.search-input {
-    background-color: #404040;
-    color: #ccc;
-    border: 1px solid #555;
-    transition: all 0.2s;
-  }
-  
-  .form-control.search-input::placeholder {
-    color: #888;
-  }
-  
-  .form-control.search-input:focus {
-    box-shadow: 0 0 0 0.25rem rgba(153, 50, 19, 0.25);
-    border-color: var(--primary-color);
-    background-color: #404040;
-    color: #fff;
-  }
-  
-  /* ========================================================== */
-  /* 5. Autenticação */
-  /* ========================================================== */
-  .auth-page-background {
-    background-color: #C0C0C0;
-    width: 100%;
-  }
-  
-  .bg-vagali-dark-card {
-    background-color: var(--vagali-dark-card) !important;
-    color: var(--light-bg);
-    border-radius: 10px;
-  }
-  
-  .form-control-dark {
-    background-color: #404040;
-    border: 1px solid #555;
-    color: var(--light-bg);
-  }
-  
-  .form-control-dark:focus {
-    background-color: #404040;
-    border-color: var(--primary-color);
-    color: var(--light-bg);
-    box-shadow: 0 0 0 0.25rem rgba(153, 50, 19, 0.25);
-  }
-  
-  .btn-custom-success {
-    background-color: var(--btn-success-color);
-    border-color: var(--btn-success-color);
-    color: white;
-  }
-  
-  .btn-custom-danger {
-    background-color: #404040;
-    border-color: #404040;
-    color: white;
-  }
-  
-  .text-vagali-link {
-    color: var(--vagali-link);
-    text-decoration: none;
-  }
-  
-  /* ========================================================== */
-  /* Dropdown de Categoria */
-  /* ========================================================== */
-  .categoria-toggle-wrapper {
-    padding: 0;
-    border: none;
-    background-color: transparent;
-    cursor: pointer;
-    height: 100%;
-  }
-  
-  .categoria-toggle-wrapper > .categoria-btn {
-    width: 100%;
-  }
-  
-  .dropdown-menu .dropdown-item {
-    color: white !important;
-  }
-  
-  .dropdown-menu .dropdown-item:hover {
-    background-color: var(--primary-color) !important;
-  }
-
-
-
-
-
-
-
-/* Fundo global */
-body {
-  background-color: #f2f2f2 !important;
-  margin: 0;
-  padding: 0;
-  font-family: "Inter", sans-serif;
 }
 
-/* Animação suave */
+/* ========================================================== */
+/* PERFIL (cards) */
+/* ========================================================== */
+.profile-card {
+    background-color: white;
+    border-radius: 12px;
+    transition: 0.2s;
+}
+.profile-card:hover {
+    transform: translateY(-5px);
+}
+
+/* ========================================================== */
+/* ANIMAÇÕES */
+/* ========================================================== */
 .fade-in {
-  animation: fadeIn 0.6s ease-out;
+    animation: fadeIn 0.6s ease-in-out;
 }
 
 @keyframes fadeIn {
-  from { opacity: 0; transform: translateY(10px); }
-  to { opacity: 1; transform: translateY(0); }
-}
-
-/* Inputs modernos */
-.form-control-custom {
-  background-color: #1f2630 !important;
-  border: 1px solid #2d3540 !important;
-  color: #fff !important;
-  box-shadow: none !important;
-}
-
-.form-control-custom:focus {
-  border-color: #0d6efd !important;
-  background-color: #1f2630 !important;
-  color: #fff !important;
-}
-
-/* Link estilizado */
-.link-blue {
-  color: #0d6efd !important;
-  text-decoration: none;
-}
-
-.link-blue:hover {
-  text-decoration: underline;
-}
-
-/* Card login */
-.card-login {
-  background-color: #1f2630 !important;
-  border-radius: 14px !important;
-  border: 1px solid #0d6efd50 !important;
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
 }

@@ -1,0 +1,56 @@
+.filterbar-wrapper {
+  margin-top: 30px;
+  display: flex;
+  justify-content: center;
+  padding: 0 20px;
+}
+
+.filterbar-inner {
+  background: #ffffff;
+  border-radius: 14px;
+  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.08);
+  padding: 14px 18px;
+  display: flex;
+  gap: 18px;
+  flex-wrap: wrap;
+  max-width: 960px;
+  width: 100%;
+}
+
+.filter-group {
+  display: flex;
+  flex-direction: column;
+  min-width: 180px;
+  flex: 1;
+}
+
+.filter-label {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: #6b7280;
+  margin-bottom: 4px;
+}
+
+.filter-input {
+  border-radius: 999px;
+  border: 1px solid #e5e7eb;
+  padding: 7px 14px;
+  font-size: 0.9rem;
+  outline: none;
+  background: #f9fafb;
+  color: #111827;
+}
+
+.filter-input:focus {
+  border-color: #0d6efd;
+  box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.18);
+  background: #ffffff;
+}
+
+/* Responsivo */
+@media (max-width: 768px) {
+  .filterbar-inner {
+    padding: 12px;
+    gap: 10px;
+  }
+}

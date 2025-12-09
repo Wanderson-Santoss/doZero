@@ -1,17 +1,17 @@
-import React, { useState } from 'react';
-import axios from 'axios';
-import { useNavigate, Link } from 'react-router-dom';
-import { Container, Card, Form, Button, Alert, Spinner } from 'react-bootstrap';
-import { Mail } from 'lucide-react';
-import LogoBranco from '../assets/LOGOBRANCO.png';
+import React, { useState } from "react";
+import axios from "axios";
+import { Link } from "react-router-dom";
+import { Container, Card, Form, Button, Alert, Spinner } from "react-bootstrap";
+import { Mail, ArrowLeft } from "lucide-react";
+import LogoBranco from "../assets/LOGOBRANCO.png";
 
 const ForgotPassword = () => {
-    const [email, setEmail] = useState('');
+    const [email, setEmail] = useState("");
     const [loading, setLoading] = useState(false);
-    const [error, setError] = useState(null);
     const [success, setSuccess] = useState(null);
+    const [error, setError] = useState(null);
 
-    const RESET_REQUEST_URL = '/api/v1/auth/password/reset/';
+    const RESET_REQUEST_URL = "/api/v1/auth/password/reset/";
 
     const handleSubmit = async (e) => {
         e.preventDefault();
@@ -22,88 +22,124 @@ const ForgotPassword = () => {
         try {
             await axios.post(RESET_REQUEST_URL, { email });
 
-            setSuccess(
-                `Se o e-mail existir, enviamos um link para ${email}. Verifique também a caixa de spam.`
-            );
-            setEmail('');
+            setSuccess(`Se o e-mail existir, enviamos um link para ${email}.`);
+            setEmail("");
+
         } catch (err) {
-            // Mesmo erro -> mensagem amigável e segura
-            setSuccess(
-                `Se o e-mail existir, enviamos um link para ${email}. Verifique também a caixa de spam.`
-            );
+            setSuccess(`Se o e-mail existir, enviamos um link para ${email}.`);
         } finally {
             setLoading(false);
         }
     };
 
     return (
-        <Container 
-            fluid 
-            className="d-flex align-items-center justify-content-center min-vh-100"
+        <Container
+            fluid
+            className="d-flex min-vh-100 p-0 fade-in"
             style={{ backgroundColor: "#f2f2f2" }}
         >
-            <Card 
-                className="p-4 shadow-lg card-login fade-in text-white"
-                style={{ maxWidth: "440px", width: "100%" }}
+            {/* COLUNA ESQUERDA */}
+            <div
+                className="d-none d-md-flex flex-column justify-content-center align-items-center text-white p-4"
+                style={{
+                    flex: 1,
+                    background: "linear-gradient(135deg, #0d47a1, #1565c0, #1e88e5)",
+                }}
             >
-                {/* LOGO */}
-                <div className="d-flex justify-content-center mb-3">
-                    <img 
-                        src={LogoBranco} 
-                        alt="logo" 
-                        style={{ width: 70, height: 70 }}
+                <Card
+                    className="p-4 shadow-lg text-center"
+                    style={{
+                        backgroundColor: "rgba(255,255,255,0.12)",
+                        borderRadius: "15px",
+                        border: "1px solid rgba(255,255,255,0.25)",
+                        width: "75%",
+                        backdropFilter: "blur(6px)",
+                    }}
+                >
+                    <img
+                        src={LogoBranco}
+                        alt="logo"
+                        style={{ width: 90, marginBottom: 20 }}
                     />
-                </div>
 
-                <h2 className="text-center mb-3 fw-bold" style={{ color: "#0d6efd" }}>
-                    <Mail className="me-2" size={28} /> Recuperar Senha
-                </h2>
+                    <h2 className="fw-bold">Recuperar Acesso</h2>
+                    <p className="mt-2" style={{ opacity: 0.8 }}>
+                        Envie seu e-mail e receba o link de redefinição.
+                    </p>
+                </Card>
+            </div>
 
-                <p className="text-center text-white-50 small mb-4">
-                    Digite seu e-mail e enviaremos um link para redefinir sua senha.
-                </p>
+            {/* COLUNA DIREITA */}
+            <div
+                className="d-flex flex-column justify-content-center align-items-center p-4"
+                style={{ flex: 1.2 }}
+            >
+                <Card
+                    className="p-4 shadow-lg card-login"
+                    style={{
+                        width: "100%",
+                        maxWidth: "420px",
+                        backgroundColor: "rgba(11, 12, 16, 0.95)",
+                        borderRadius: "12px",
+                    }}
+                >
+                    <div className="text-center mb-3">
+                        <Mail size={40} className="text-primary" />
+                        <h2 className="fw-bold mt-2" style={{ color: "#0d6efd" }}>
+                            Recuperar Senha
+                        </h2>
+                    </div>
 
-                {success && <Alert variant="success" className="text-dark">{success}</Alert>}
-                {error && <Alert variant="danger">{error}</Alert>}
+                    {success && (
+                        <Alert variant="success" className="py-2 small">
+                            {success}
+                        </Alert>
+                    )}
 
-                <Form onSubmit={handleSubmit}>
+                    <Form onSubmit={handleSubmit}>
+                        {/* Campo de E-mail */}
+                        <Form.Group className="mb-3">
+                            <Form.Label className="text-white-50 small">E-mail</Form.Label>
+                            <div
+                                className="d-flex align-items-center rounded px-2"
+                                style={{ background: "#1b212b" }}
+                            >
+                                <Mail size={18} className="text-primary me-2" />
+                                <Form.Control
+                                    type="email"
+                                    placeholder="seu.email@exemplo.com"
+                                    className="form-control-custom border-0"
+                                    value={email}
+                                    onChange={(e) => setEmail(e.target.value)}
+                                    required
+                                />
+                            </div>
+                        </Form.Group>
 
-                    {/* CAMPO DE E-MAIL */}
-                    <Form.Group className="mb-3">
-                        <Form.Label className="text-white-50 small">E-mail</Form.Label>
-                        <div className="d-flex align-items-center rounded px-2" 
-                            style={{ background: "#1b212b" }}>
-                            
-                            <Mail size={18} className="text-primary me-2" />
-                            <Form.Control
-                                type="email"
-                                placeholder="seu.email@exemplo.com"
-                                className="form-control-custom border-0"
-                                value={email}
-                                onChange={(e) => setEmail(e.target.value)}
-                                required
-                            />
-                        </div>
-                    </Form.Group>
+                        {/* Botão */}
+                        <Button
+                            type="submit"
+                            variant="primary"
+                            className="w-100 fw-bold py-2"
+                            disabled={loading}
+                        >
+                            {loading ? (
+                                <Spinner animation="border" size="sm" />
+                            ) : (
+                                "Enviar link de recuperação"
+                            )}
+                        </Button>
+                    </Form>
 
-                    {/* BOTÃO ENVIAR */}
-                    <Button
-                        type="submit"
-                        variant="primary"
-                        className="w-100 fw-bold py-2"
-                        disabled={loading}
-                    >
-                        {loading ? <Spinner animation="border" size="sm" /> : "Enviar Link de Recuperação"}
-                    </Button>
-                </Form>
-
-                {/* VOLTAR AO LOGIN */}
-                <p className="text-center small mt-4">
-                    <Link to="/login" className="link-blue fw-bold">
-                        Voltar para Login
-                    </Link>
-                </p>
-            </Card>
+                    {/* Voltar ao login */}
+                    <p className="text-center small mt-4">
+                        <Link to="/login" className="link-blue fw-bold">
+                            <ArrowLeft size={16} className="me-1" />
+                            Voltar para Login
+                        </Link>
+                    </p>
+                </Card>
+            </div>
         </Container>
     );
 };
