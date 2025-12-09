@@ -441,3 +441,130 @@
     grid-template-columns: repeat(3, minmax(0, 1fr));
   }
 }
+
+
+
+
+
+
+
+
+
+/* profissão abaixo do nome */
+.prof-profession {
+  font-size: 0.9rem;
+  color: #e5e7eb;
+  opacity: 0.9;
+  margin-top: -4px;
+}
+
+/* header do card colapsável */
+.prof-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  cursor: pointer;
+}
+
+/* botão denunciar com cor diferente */
+.btn-outline.danger {
+  border-color: rgba(248, 113, 113, 0.8);
+  color: #fee2e2;
+}
+
+.btn-outline.danger:hover {
+  background: rgba(127, 29, 29, 0.2);
+}
+
+/* stats, portfolio, paginação – se ainda não estiverem aí */
+.prof-stats-row {
+  margin-top: 14px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.stat-card {
+  flex: 1;
+  min-width: 120px;
+  background: rgba(15, 23, 42, 0.15);
+  border-radius: 10px;
+  padding: 6px 10px;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+}
+
+.stat-main {
+  font-weight: 700;
+  font-size: 1rem;
+}
+
+.stat-label {
+  font-size: 0.8rem;
+  opacity: 0.85;
+  margin-top: 2px;
+}
+
+.stat-red { color: #f97316; }
+.stat-orange { color: #facc15; }
+.stat-green { color: #22c55e; }
+
+.portfolio-grid {
+  margin-top: 10px;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.portfolio-item {
+  background: #0f172a;
+  border-radius: 12px;
+  height: 90px;
+  box-shadow: 0 8px 18px rgba(15, 23, 42, 0.4);
+  display: flex;
+  align-items: flex-end;
+  padding: 8px 10px;
+}
+
+.portfolio-label {
+  font-size: 0.8rem;
+  color: #e5e7eb;
+}
+
+.portfolio-pagination {
+  margin-top: 12px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 6px;
+}
+
+.page-btn {
+  border: none;
+  background: transparent;
+  color: #4b5563;
+  font-size: 0.9rem;
+  cursor: pointer;
+  padding: 2px 6px;
+}
+
+.page-btn:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
+.page-dot {
+  border: none;
+  background: transparent;
+  color: #4b5563;
+  font-size: 0.85rem;
+  cursor: pointer;
+  padding: 2px 4px;
+}
+
+.page-dot.active {
+  color: #1d4ed8;
+  font-weight: 700;
+  text-decoration: underline;
+}

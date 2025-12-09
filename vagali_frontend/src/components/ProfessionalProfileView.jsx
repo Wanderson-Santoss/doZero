@@ -11,6 +11,10 @@ import {
   Briefcase,
   Share2,
   Heart,
+  Calendar,
+  Flag,
+  ChevronDown,
+  ChevronUp,
 } from "lucide-react";
 import "./professionalProfile.css";
 import { useAuth } from "./AuthContext";
@@ -26,9 +30,21 @@ const ProfessionalProfileView = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  // estado da paginação do portfólio
+  // paginação portfólio
   const [portfolioPage, setPortfolioPage] = useState(1);
-  const ITEMS_PER_PAGE = 9; // 3 x 3
+  const ITEMS_PER_PAGE = 9; // 3x3
+
+  // controle de colapso das seções
+  const [sectionsOpen, setSectionsOpen] = useState({
+    about: true,
+    portfolio: true,
+    info: true,
+    feedbacks: true,
+  });
+
+  const toggleSection = (key) => {
+    setSectionsOpen((prev) => ({ ...prev, [key]: !prev[key] }));
+  };
 
   useEffect(() => {
     if (!id) return;
@@ -55,17 +71,24 @@ const ProfessionalProfileView = () => {
 
   const ratingFormatted = rating.toFixed(1);
 
-  // “Satisfação” aproximada: rating x 20, ou 0 se não tiver
+  // Satisfação aproximada (rating * 20)
   const satisfaction = useMemo(() => {
     if (!professional) return 0;
     const pct = Math.max(0, Math.min(100, rating * 20));
     return Math.round(pct);
   }, [rating, professional]);
 
-  // demandas: por enquanto mock – se no futuro vier professional.demands_count usamos direto
-  const demandsCount = professional?.demands_count ?? 42; // valor fixo só pra exibição por enquanto
+  // número real vindo da API (ideal): professional.demands_count
+  const demandsCount = professional?.demands_count ?? 0;
 
-  const statusLabel = "Ativo"; // depois pode vir do backend (ex: professional.is_active)
+  const statusLabel = "Ativo"; // no futuro pode vir do backend
+
+  // Profissão: no futuro virá de um campo próprio; por enquanto, fallback
+  const professionLabel =
+    professional?.profession ||
+    (professional?.palavras_chave
+      ? professional.palavras_chave.split(",")[0]?.trim()
+      : "Profissional de serviços");
 
   const tags = useMemo(() => {
     if (!professional || !professional.palavras_chave) return [];
@@ -98,6 +121,11 @@ const ProfessionalProfileView = () => {
     }
   };
 
+  const handleReport = () => {
+    // aqui no futuro pode abrir modal ou redirecionar para página de denúncia
+    alert("Funcionalidade de denúncia será implementada em breve.");
+  };
+
   if (loading) {
     return (
       <div className="prof-page-wrapper">
@@ -123,8 +151,7 @@ const ProfessionalProfileView = () => {
 
   const displayName = professional.full_name || professional.email;
 
-  // ------------------ PORTFÓLIO (fake por enquanto) ------------------
-  // Futuro: substituir por professional.portfolio (lista de objetos com url/foto)
+  // PORTFÓLIO (mock até ter API)
   const rawPortfolio =
     professional.portfolio && Array.isArray(professional.portfolio)
       ? professional.portfolio
@@ -185,7 +212,10 @@ const ProfessionalProfileView = () => {
             <div className="prof-header-info">
               {/* linha com nome + seguir + compartilhar */}
               <div className="prof-name-row">
-                <h1 className="prof-name">{displayName}</h1>
+                <div>
+                  <h1 className="prof-name">{displayName}</h1>
+                  <p className="prof-profession">{professionLabel}</p>
+                </div>
                 <div className="prof-name-actions">
                   <button
                     type="button"
@@ -240,7 +270,7 @@ const ProfessionalProfileView = () => {
             </div>
           </div>
 
-          {/* Ações rápidas (chat / email) */}
+          {/* Ações rápidas (chat / calendário / email / denunciar) */}
           <div className="prof-header-actions">
             <button
               className="btn-primary"
@@ -250,13 +280,29 @@ const ProfessionalProfileView = () => {
               Iniciar conversa
             </button>
 
+            <button
+              className="btn-outline"
+              onClick={() => navigate(`/professional/${id}/schedule`)}
+            >
+              <Calendar size={16} className="me-1" />
+              Consultar agenda
+            </button>
+
             <a href={`mailto:${professional.email}`} className="btn-outline">
               <Mail size={16} className="me-1" />
               Enviar e-mail
             </a>
+
+            <button
+              className="btn-outline danger"
+              onClick={handleReport}
+            >
+              <Flag size={16} className="me-1" />
+              Denunciar
+            </button>
           </div>
 
-          {/* 🔢 LINHA DE ESTATÍSTICAS (Satisfação / Demandas / Status) */}
+          {/* LINHA DE ESTATÍSTICAS */}
           <div className="prof-stats-row">
             <div className="stat-card">
               <div className="stat-main stat-red">{satisfaction}%</div>
@@ -275,114 +321,180 @@ const ProfessionalProfileView = () => {
 
         {/* CONTEÚDO PRINCIPAL */}
         <div className="prof-content-grid">
-          {/* COLUNA ESQUERDA: Sobre + Portfólio */}
+          {/* COLUNA ESQUERDA: Sobre + Portfólio + Feedbacks */}
           <div className="prof-column">
-            {/* Sobre */}
+            {/* SOBRE O PROFISSIONAL */}
             <section className="prof-card">
-              <h2 className="prof-section-title">
-                <Briefcase size={18} className="me-2" />
-                Sobre o profissional
-              </h2>
-              <p className="prof-section-text">
-                {professional.bio
-                  ? professional.bio
-                  : "Este profissional ainda não adicionou uma descrição detalhada sobre seus serviços."}
-              </p>
+              <div
+                className="prof-card-header"
+                onClick={() => toggleSection("about")}
+              >
+                <h2 className="prof-section-title">
+                  <Briefcase size={18} className="me-2" />
+                  Sobre o profissional
+                </h2>
+                {sectionsOpen.about ? (
+                  <ChevronUp size={18} />
+                ) : (
+                  <ChevronDown size={18} />
+                )}
+              </div>
+
+              {sectionsOpen.about && (
+                <p className="prof-section-text">
+                  {professional.bio
+                    ? professional.bio
+                    : "Este profissional ainda não adicionou uma descrição detalhada sobre seus serviços."}
+                </p>
+              )}
             </section>
 
-            {/* Portfólio & Mídia */}
+            {/* PORTFÓLIO & MÍDIA */}
             <section className="prof-card">
-              <h2 className="prof-section-title">Portfólio & Mídia</h2>
-              <p className="prof-section-text">
-                Aqui o profissional pode destacar trabalhos realizados, fotos de
-                serviços, antes e depois, etc.
-              </p>
+              <div
+                className="prof-card-header"
+                onClick={() => toggleSection("portfolio")}
+              >
+                <h2 className="prof-section-title">Portfólio & Mídia</h2>
+                {sectionsOpen.portfolio ? (
+                  <ChevronUp size={18} />
+                ) : (
+                  <ChevronDown size={18} />
+                )}
+              </div>
 
-              {/* GRID 3 x 3 */}
-              <div className="portfolio-grid">
-                {portfolioItems.map((item) => (
-                  <div key={item.id ?? item.label} className="portfolio-item">
-                    <div className="portfolio-label">
-                      {item.label || item.titulo || "Projeto"}
-                    </div>
+              {sectionsOpen.portfolio && (
+                <>
+                  <p className="prof-section-text">
+                    Aqui o profissional pode destacar trabalhos realizados, fotos de
+                    serviços, antes e depois, etc.
+                  </p>
+
+                  {/* GRID 3x3 */}
+                  <div className="portfolio-grid">
+                    {portfolioItems.map((item) => (
+                      <div key={item.id ?? item.label} className="portfolio-item">
+                        <div className="portfolio-label">
+                          {item.label || item.titulo || "Projeto"}
+                        </div>
+                      </div>
+                    ))}
                   </div>
-                ))}
-              </div>
 
-              {/* PAGINAÇÃO < 1 . 2 . 3 > */}
-              {totalPages > 1 && (
-                <div className="portfolio-pagination">
-                  <button
-                    type="button"
-                    className="page-btn"
-                    disabled={currentPage === 1}
-                    onClick={() => changePage(currentPage - 1)}
-                  >
-                    &lt;
-                  </button>
-
-                  {Array.from({ length: totalPages }).map((_, idx) => {
-                    const page = idx + 1;
-                    return (
+                  {/* PAGINAÇÃO */}
+                  {totalPages > 1 && (
+                    <div className="portfolio-pagination">
                       <button
-                        key={page}
                         type="button"
-                        className={`page-dot ${
-                          page === currentPage ? "active" : ""
-                        }`}
-                        onClick={() => changePage(page)}
+                        className="page-btn"
+                        disabled={currentPage === 1}
+                        onClick={() => changePage(currentPage - 1)}
                       >
-                        {page}
+                        &lt;
                       </button>
-                    );
-                  })}
 
-                  <button
-                    type="button"
-                    className="page-btn"
-                    disabled={currentPage === totalPages}
-                    onClick={() => changePage(currentPage + 1)}
-                  >
-                    &gt;
-                  </button>
-                </div>
+                      {Array.from({ length: totalPages }).map((_, idx) => {
+                        const page = idx + 1;
+                        return (
+                          <button
+                            key={page}
+                            type="button"
+                            className={`page-dot ${
+                              page === currentPage ? "active" : ""
+                            }`}
+                            onClick={() => changePage(page)}
+                          >
+                            {page}
+                          </button>
+                        );
+                      })}
+
+                      <button
+                        type="button"
+                        className="page-btn"
+                        disabled={currentPage === totalPages}
+                        onClick={() => changePage(currentPage + 1)}
+                      >
+                        &gt;
+                      </button>
+                    </div>
+                  )}
+
+                  <div className="hint-text" style={{ marginTop: "10px" }}>
+                    Em uma próxima etapa, isso pode ser ligado a um cadastro real
+                    de fotos e vídeos, como no Instagram.
+                  </div>
+                </>
               )}
+            </section>
 
-              <div className="hint-text" style={{ marginTop: "10px" }}>
-                Em uma próxima etapa, isso pode ser conectado a um cadastro de
-                projetos/álbum de fotos com imagens reais, como no Instagram.
+            {/* FEEDBACKS / AVALIAÇÕES */}
+            <section className="prof-card">
+              <div
+                className="prof-card-header"
+                onClick={() => toggleSection("feedbacks")}
+              >
+                <h2 className="prof-section-title">Feedbacks</h2>
+                {sectionsOpen.feedbacks ? (
+                  <ChevronUp size={18} />
+                ) : (
+                  <ChevronDown size={18} />
+                )}
               </div>
+
+              {sectionsOpen.feedbacks && (
+                <p className="prof-section-text">
+                  Em breve você verá aqui as avaliações reais de clientes, com
+                  comentários, datas e notas detalhadas.
+                </p>
+              )}
             </section>
           </div>
 
-          {/* COLUNA DIREITA: informações gerais */}
+          {/* COLUNA DIREITA: Informações gerais */}
           <section className="prof-card">
-            <h2 className="prof-section-title">Informações gerais</h2>
-            <ul className="prof-info-list">
-              <li>
-                <span className="label">E-mail:</span>
-                <span className="value">{professional.email}</span>
-              </li>
-
-              {professional.address && (
-                <li>
-                  <span className="label">Atende em:</span>
-                  <span className="value">{professional.address}</span>
-                </li>
+            <div
+              className="prof-card-header"
+              onClick={() => toggleSection("info")}
+            >
+              <h2 className="prof-section-title">Informações gerais</h2>
+              {sectionsOpen.info ? (
+                <ChevronUp size={18} />
+              ) : (
+                <ChevronDown size={18} />
               )}
-
-              <li>
-                <span className="label">Avaliação média:</span>
-                <span className="value">
-                  <Star size={14} className="star-icon me-1" />
-                  {ratingFormatted}
-                </span>
-              </li>
-            </ul>
-
-            <div className="hint-text">
-              Em breve você poderá ver avaliações reais de clientes aqui.
             </div>
+
+            {sectionsOpen.info && (
+              <>
+                <ul className="prof-info-list">
+                  <li>
+                    <span className="label">E-mail:</span>
+                    <span className="value">{professional.email}</span>
+                  </li>
+
+                  {professional.address && (
+                    <li>
+                      <span className="label">Atende em:</span>
+                      <span className="value">{professional.address}</span>
+                    </li>
+                  )}
+
+                  <li>
+                    <span className="label">Avaliação média:</span>
+                    <span className="value">
+                      <Star size={14} className="star-icon me-1" />
+                      {ratingFormatted}
+                    </span>
+                  </li>
+                </ul>
+
+                <div className="hint-text">
+                  Outras informações (CNPJ, modalidades de atendimento,
+                  especialidades avançadas) podem ser adicionadas aqui depois.
+                </div>
+              </>
+            )}
           </section>
         </div>
       </div>
