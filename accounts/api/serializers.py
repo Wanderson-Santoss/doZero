@@ -1,5 +1,3 @@
-# accounts/api/serializers.py
-
 from django.contrib.auth import authenticate
 from django.utils.translation import gettext_lazy as _
 from django.db import transaction
@@ -10,11 +8,12 @@ from accounts.models import User, Profile
 
 
 # -------------------------------------------------------------------
-# 1. PROFILE SERIALIZER (dados do Profile)
+# 1. PROFILE SERIALIZER
 # -------------------------------------------------------------------
 class ProfileSerializer(serializers.ModelSerializer):
     """
-    Serializer para o modelo Profile, com campos opcionais para permitir PATCH.
+    Serializer do Profile.
+    Usado tanto para leitura quanto atualização (PATCH).
     """
 
     full_name = serializers.CharField(required=False, allow_blank=True, max_length=255)
@@ -26,27 +25,31 @@ class ProfileSerializer(serializers.ModelSerializer):
     cep = serializers.CharField(required=False, allow_blank=True, max_length=8)
     palavras_chave = serializers.CharField(required=False, allow_blank=True)
     photo = serializers.ImageField(required=False, allow_null=True)
-    # 🔴 NOVO: profissão principal
-    profession = serializers.CharField(required=False, allow_blank=True, max_length=100)
+
+    # ✅ NOVO — profissão principal
+    profession = serializers.CharField(
+        required=False,
+        allow_blank=True,
+        max_length=100
+    )
 
     class Meta:
         model = Profile
-        # não enviamos o user nem a rating diretamente
         exclude = ("user", "rating")
         read_only_fields = ("rating",)
 
 
 # -------------------------------------------------------------------
-# 2. FULL PROFILE SERIALIZER (User + Profile do usuário logado)
+# 2. FULL PROFILE SERIALIZER (User + Profile)
 # -------------------------------------------------------------------
 class FullProfileSerializer(serializers.ModelSerializer):
     """
-    Retorna e atualiza dados do User + Profile.
-    Usado em /api/v1/accounts/perfil/me/
+    Serializer usado em:
+    /api/v1/accounts/perfil/me/
     """
 
     profile = ProfileSerializer(required=False)
-    is_professional = serializers.BooleanField(required=False, allow_null=True)
+    is_professional = serializers.BooleanField(required=False)
     email = serializers.EmailField(read_only=True)
 
     class Meta:
@@ -61,43 +64,44 @@ class FullProfileSerializer(serializers.ModelSerializer):
 
     @transaction.atomic
     def update(self, instance, validated_data):
+        """
+        Controla a transição Cliente <-> Profissional
+        """
         profile_data = validated_data.pop("profile", None)
-        is_professional = validated_data.pop("is_professional", None)
+        new_is_professional = validated_data.pop("is_professional", None)
 
         old_is_professional = instance.is_professional
 
-        if is_professional is not None:
-            instance.is_professional = is_professional
+        if new_is_professional is not None:
+            instance.is_professional = new_is_professional
 
         instance = super().update(instance, validated_data)
         instance.save()
 
-        if not hasattr(instance, "profile") or instance.profile is None:
-            profile_instance = Profile.objects.create(user=instance)
-        else:
-            profile_instance = instance.profile
+        profile, _ = Profile.objects.get_or_create(user=instance)
 
-        if old_is_professional is True and instance.is_professional is False:
-            profile_instance.bio = ""
-            profile_instance.address = ""
-            profile_instance.cnpj = ""
-            profile_instance.palavras_chave = ""
-            profile_instance.profession = ""
-            profile_instance.save()
+        # ✅ Se voltou de PROFISSIONAL → CLIENTE, limpamos dados profissionais
+        if old_is_professional and not instance.is_professional:
+            profile.bio = ""
+            profile.address = ""
+            profile.cnpj = ""
+            profile.palavras_chave = ""
+            profile.profession = ""
+            profile.save()
 
-        if profile_data is not None:
-            profile_serializer = self.fields["profile"]
-            profile_serializer.update(profile_instance, profile_data)
+        # Atualiza campos do profile
+        if profile_data:
+            ProfileSerializer().update(profile, profile_data)
 
         return instance
 
 
 # -------------------------------------------------------------------
-# 3. PUBLIC PROFESSIONAL SERIALIZER (listagem / detalhe público)
+# 3. PROFESSIONAL SERIALIZER (LISTAGEM PÚBLICA)
 # -------------------------------------------------------------------
 class ProfessionalSerializer(serializers.ModelSerializer):
     """
-    Serializer usado na listagem pública de profissionais.
+    Serializer público usado no Home e Perfil Público.
     """
 
     full_name = serializers.SerializerMethodField()
@@ -125,66 +129,50 @@ class ProfessionalSerializer(serializers.ModelSerializer):
         )
 
     def get_full_name(self, obj):
-        if hasattr(obj, "profile") and obj.profile and obj.profile.full_name:
-            return obj.profile.full_name
-        return obj.email
+        return getattr(obj.profile, "full_name", None) or obj.email
 
     def get_bio(self, obj):
-        if hasattr(obj, "profile") and obj.profile:
-            return obj.profile.bio
-        return None
+        return getattr(obj.profile, "bio", None)
 
     def get_rating(self, obj):
-        if hasattr(obj, "profile") and obj.profile:
-            return obj.profile.rating or 0.0
-        return 0.0
+        return getattr(obj.profile, "rating", 0.0) or 0.0
 
     def get_address(self, obj):
-        if hasattr(obj, "profile") and obj.profile:
-            return obj.profile.address
-        return None
+        return getattr(obj.profile, "address", None)
 
     def get_palavras_chave(self, obj):
-        if hasattr(obj, "profile") and obj.profile:
-            return obj.profile.palavras_chave or ""
-        return ""
+        return getattr(obj.profile, "palavras_chave", "") or ""
 
     def get_photo(self, obj):
-        if hasattr(obj, "profile") and getattr(obj.profile, "photo", None):
-            try:
-                return obj.profile.photo.url
-            except Exception:
-                return None
-        return None
+        photo = getattr(obj.profile, "photo", None)
+        return photo.url if photo else None
 
     def get_demands_count(self, obj):
-        return 0
+        return 0  # reservado para o futuro
 
     def get_profession(self, obj):
         """
-        Agora usamos diretamente profile.profession.
-        Se não tiver, caímos no fallback das palavras-chave.
+        Prioridade:
+        1️⃣ profile.profession
+        2️⃣ fallback palavras-chave
         """
-        if hasattr(obj, "profile") and getattr(obj.profile, "profession", None):
-            return obj.profile.profession
+        profession = getattr(obj.profile, "profession", None)
+        if profession:
+            return profession
 
-        if hasattr(obj, "profile") and obj.profile.palavras_chave:
-            first = obj.profile.palavras_chave.split(",")[0].strip()
-            return first or None
+        palavras = getattr(obj.profile, "palavras_chave", "")
+        if palavras:
+            return palavras.split(",")[0].strip()
 
         return None
 
 
 # -------------------------------------------------------------------
-# 4. Serializer customizado para LOGIN por e-mail
+# 4. LOGIN VIA TOKEN (E-MAIL)
 # -------------------------------------------------------------------
 class CustomAuthTokenSerializer(serializers.Serializer):
-    email = serializers.EmailField(
-        label=_("E-mail"),
-        write_only=True,
-    )
+    email = serializers.EmailField(write_only=True)
     password = serializers.CharField(
-        label=_("Senha"),
         style={"input_type": "password"},
         trim_whitespace=False,
         write_only=True,
@@ -194,18 +182,22 @@ class CustomAuthTokenSerializer(serializers.Serializer):
         email = attrs.get("email")
         password = attrs.get("password")
 
-        if email and password:
-            user = authenticate(
-                request=self.context.get("request"),
-                username=email,
-                password=password,
+        if not email or not password:
+            raise serializers.ValidationError(
+                _("É necessário informar e-mail e senha.")
             )
-            if not user:
-                msg = _("Não foi possível fazer login com essas credenciais.")
-                raise serializers.ValidationError(msg, code="authorization")
-        else:
-            msg = _("É necessário informar e-mail e senha.")
-            raise serializers.ValidationError(msg, code="authorization")
+
+        user = authenticate(
+            request=self.context.get("request"),
+            username=email,
+            password=password,
+        )
+
+        if not user:
+            raise serializers.ValidationError(
+                _("Credenciais inválidas."),
+                code="authorization",
+            )
 
         attrs["user"] = user
         return attrs

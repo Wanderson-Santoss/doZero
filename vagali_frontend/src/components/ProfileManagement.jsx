@@ -10,7 +10,10 @@ import {
   Alert,
   Spinner,
   Collapse,
+  OverlayTrigger,
+  Popover
 } from "react-bootstrap";
+import { HelpCircle } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import axios from "axios";
 import {
@@ -74,7 +77,8 @@ const ProfileManagement = () => {
     neighborhood: "",
     city: "",
     state: "",
-    profession: "", // 🔴 NOVO
+    profession: "",
+    cnpj: ""
   });
 
   const [isSaving, setIsSaving] = useState(false);
@@ -84,6 +88,52 @@ const ProfileManagement = () => {
   const [cepLoading, setCepLoading] = useState(false);
   const [cepError, setCepError] = useState(null);
 
+  // -------------------- CNPJ HELP --------------------
+
+// Popover com informações
+const cnpjPopover = (
+  <Popover id="cnpj-popover">
+    <Popover.Header as="h6">Vantagens do CNPJ</Popover.Header>
+    <Popover.Body>
+      ✔ Taxas menores por serviço <br />
+      ✔ Perfil em destaque na vitrine <br />
+      
+      <hr className="my-2" />
+      Sem CNPJ, o perfil <strong>não aparece como destaque</strong>.
+    </Popover.Body>
+  </Popover>
+);
+
+// Máscara de CNPJ
+const formatCnpj = (value) => {
+  const digits = value.replace(/\D/g, "").slice(0, 14);
+  return digits
+    .replace(/^(\d{2})(\d)/, "$1.$2")
+    .replace(/^(\d{2})\.(\d{3})(\d)/, "$1.$2.$3")
+    .replace(/\.(\d{3})(\d)/, ".$1/$2")
+    .replace(/(\d{4})(\d)/, "$1-$2");
+};
+
+// Handler exclusivo do CNPJ
+const handleChangeCnpj = (e) => {
+  setProfileData((prev) => ({
+    ...prev,
+    cnpj: formatCnpj(e.target.value),
+  }));
+};
+
+
+  useEffect(() => {
+    if (!window.bootstrap) return;
+
+    const tooltipTriggerList = [].slice.call(
+      document.querySelectorAll('[data-bs-toggle="tooltip"]')
+    );
+
+    tooltipTriggerList.forEach((el) => {
+      new window.bootstrap.Tooltip(el);
+    });
+  }, [userRole]);
   const fetchAddressByCep = useCallback(async (cep) => {
     const cleanedCep = cep.replace(/\D/g, "");
     if (cleanedCep.length !== 8) {
@@ -142,6 +192,7 @@ const ProfileManagement = () => {
               : `${API_BASE_URL}${profile.photo}`
             : DEFAULT_AVATAR,
           profession: profile?.profession || "",
+          cnpj: profile?.cnpj ? formatCnpj(profile.cnpj) : "",
         }));
 
         // opcional: alinhar papel do contexto ao backend
@@ -245,7 +296,10 @@ const ProfileManagement = () => {
         phone_number: phone,
         cep: cep,
         address: composedAddress,
-        profession: profession, // 🔴 ENVIA PRO BACKEND
+        profession: profession,
+        cnpj: profileData.cnpj
+          ? profileData.cnpj.replace(/\D/g, "")
+          : null,
       },
     };
 
@@ -261,6 +315,7 @@ const ProfileManagement = () => {
         cep: profile?.cep || prev.cep,
         street: profile?.address || prev.street,
         profession: profile?.profession || prev.profession,
+        cnpj: profile?.cnpj ? formatCnpj(profile.cnpj) : "",
       }));
 
       if (typeof setUserRole === "function") {
@@ -427,9 +482,10 @@ const ProfileManagement = () => {
                       <>
                         <hr />
                         <h5 className="mb-3 text-muted d-flex align-items-center">
-                          <Briefcase size={20} className="me-2" /> Informações
-                          profissionais
+                          <Briefcase size={20} className="me-2" /> Informações profissionais
                         </h5>
+
+                        {/* PROFISSÃO */}
                         <Row className="mb-3">
                           <Col md={6}>
                             <Form.Label>Profissão principal</Form.Label>
@@ -446,9 +502,40 @@ const ProfileManagement = () => {
                               ))}
                             </Form.Select>
                           </Col>
+
+
+                          {/* CNPJ */}
+                          <Col md={6}>
+                            <Form.Label className="d-flex align-items-center">
+                              CNPJ (opcional)
+
+                              <OverlayTrigger
+                                trigger="click"
+                                placement="right"
+                                overlay={cnpjPopover}
+                                rootClose
+                              >
+                                <span className="ms-2 text-primary" style={{ cursor: "pointer" }}>
+                                  <HelpCircle size={18} />
+                                </span>
+                              </OverlayTrigger>
+                            </Form.Label>
+
+                            <Form.Control
+                              type="text"
+                              name="cnpj"
+                              placeholder="00.000.000/0000-00"
+                              value={profileData.cnpj}
+                              onChange={handleChangeCnpj}
+                              maxLength={18}
+                            />
+                          </Col>
+
+
                         </Row>
                       </>
                     )}
+
 
                     {/* ENDEREÇO */}
                     <hr />
@@ -622,11 +709,35 @@ const ProfileManagement = () => {
               <Button
                 variant="primary"
                 className="w-100 mt-2 fw-bold d-flex justify-content-center align-items-center"
-                onClick={toggleRole}
+                onClick={async () => {
+                  if (userRole === "Cliente") {
+                    try {
+                      // 1️⃣ Vira profissional no backend
+                      await axios.patch("/api/v1/accounts/perfil/me/", {
+                        is_professional: true,
+                      });
+
+                      // 2️⃣ Atualiza contexto
+                      setUserRole("Profissional");
+
+                      // 3️⃣ NÃO vai pro perfil público
+                      // Fica na tela para editar dados
+                      alert(
+                        "Agora complete seu perfil profissional (profissão, endereço, etc) antes de aparecer publicamente."
+                      );
+                    } catch (err) {
+                      console.error(err);
+                      alert("Erro ao mudar para profissional.");
+                    }
+                  } else {
+                    toggleRole();
+                  }
+                }}
               >
                 <Repeat size={18} className="me-2" />
                 Mudar para: {nextRole}
               </Button>
+
             </Card.Body>
           </Card>
 

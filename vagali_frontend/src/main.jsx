@@ -7,6 +7,7 @@ import './index.css';
 import './App.css'; // Importa os estilos globais
 import 'bootstrap-icons/font/bootstrap-icons.css'; // Ícones
 
+
 ReactDOM.createRoot(document.getElementById('root')).render(
   <React.StrictMode>
     <App />

@@ -5,7 +5,18 @@ import { Star, MapPin } from "lucide-react";
 import { Link } from "react-router-dom";
 import "./carousel.css";
 
-const defaultPhoto = "https://cdn-icons-png.flaticon.com/512/149/149071.png";
+const API_BASE_URL = "http://localhost:8000";
+const defaultPhoto =
+  "https://cdn-icons-png.flaticon.com/512/149/149071.png";
+
+/* ✅ função para normalizar a foto */
+const normalizePhoto = (photo) => {
+  if (!photo) return defaultPhoto;
+  if (photo.startsWith("http")) {
+    return `${photo}?t=${Date.now()}`;
+  }
+  return `${API_BASE_URL}${photo}?t=${Date.now()}`;
+};
 
 const ProfessionalsCarousel = ({ professionals, loading }) => {
   const settings = {
@@ -22,29 +33,22 @@ const ProfessionalsCarousel = ({ professionals, loading }) => {
     ],
   };
 
-  const renderSkeleton = () => (
-    <div className="carousel-container">
-      <h2 className="section-title">Profissionais em Destaque</h2>
-      <div className="skeleton-row">
-        {[1, 2, 3].map((i) => (
-          <div key={i} className="professional-card skeleton-card">
-            <div className="skeleton-photo" />
-            <div className="skeleton-line w-60" />
-            <div className="skeleton-line w-40" />
-            <div className="skeleton-line w-80" />
-          </div>
-        ))}
+  if (loading) {
+    return (
+      <div className="carousel-container">
+        <h2 className="section-title">Profissionais em Destaque</h2>
+        <p>Carregando...</p>
       </div>
-    </div>
-  );
-
-  if (loading) return renderSkeleton();
+    );
+  }
 
   if (!professionals || professionals.length === 0) {
     return (
       <div className="carousel-container">
         <h2 className="section-title">Profissionais em Destaque</h2>
-        <p className="empty-text">Nenhum profissional encontrado no momento.</p>
+        <p className="empty-text">
+          Nenhum profissional encontrado no momento.
+        </p>
       </div>
     );
   }
@@ -55,9 +59,10 @@ const ProfessionalsCarousel = ({ professionals, loading }) => {
 
       <Slider {...settings}>
         {professionals.map((prof) => {
-          const rating = typeof prof.rating === "number"
-            ? prof.rating.toFixed(1)
-            : "0.0";
+          const rating =
+            typeof prof.rating === "number"
+              ? prof.rating.toFixed(1)
+              : "0.0";
 
           const tags = (prof.palavras_chave || "")
             .split(",")
@@ -73,20 +78,17 @@ const ProfessionalsCarousel = ({ professionals, loading }) => {
               viewport={{ once: true }}
             >
               <div className="professional-card">
-
-                {/* FOTO */}
+                {/* ✅ FOTO CORRIGIDA */}
                 <img
-                  src={prof.photo || defaultPhoto}
+                  src={normalizePhoto(prof.photo)}
                   alt={prof.full_name || prof.email}
                   className="professional-photo"
                 />
 
-                {/* NOME */}
                 <h3 className="professional-name">
                   {prof.full_name || prof.email}
                 </h3>
 
-                {/* CIDADE */}
                 {prof.address && (
                   <div className="professional-address">
                     <MapPin size={15} className="me-1" />
@@ -94,13 +96,11 @@ const ProfessionalsCarousel = ({ professionals, loading }) => {
                   </div>
                 )}
 
-                {/* RATING */}
                 <div className="rating-box">
                   <Star size={18} className="star-icon" />
                   <span>{rating}</span>
                 </div>
 
-                {/* BIO */}
                 {prof.bio && (
                   <p className="professional-bio">
                     {prof.bio.length > 110
@@ -109,7 +109,6 @@ const ProfessionalsCarousel = ({ professionals, loading }) => {
                   </p>
                 )}
 
-                {/* TAGS */}
                 {tags.length > 0 && (
                   <div className="tags-container">
                     {tags.map((tag, idx) => (
@@ -120,7 +119,6 @@ const ProfessionalsCarousel = ({ professionals, loading }) => {
                   </div>
                 )}
 
-                {/* BOTÃO */}
                 <Link
                   to={`/perfil/${prof.id}`}
                   className="view-profile-btn"

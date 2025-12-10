@@ -1,7 +1,7 @@
-// src/pages/Home.jsx
 import React, { useState, useEffect, useMemo } from "react";
 import axios from "axios";
 import { motion } from "framer-motion";
+import { useLocation } from "react-router-dom";
 
 import Hero from "../components/home/Hero";
 import SearchBar from "../components/home/SearchBar";
@@ -15,15 +15,18 @@ const PROFESSIONALS_URL = "/api/v1/accounts/profissionais/";
 const Home = () => {
   const [professionals, setProfessionals] = useState([]);
   const [loading, setLoading] = useState(true);
+  const location = useLocation();
+
   const [filters, setFilters] = useState({
     city: "",
     ratingMin: 0,
     sort: "relevance",
   });
 
+  /* ✅ refetch ao voltar para Home */
   useEffect(() => {
     fetchProfessionals();
-  }, []);
+  }, [location.pathname]);
 
   const fetchProfessionals = async (search = "") => {
     setLoading(true);
@@ -49,7 +52,9 @@ const Home = () => {
 
     if (filters.city) {
       list = list.filter((p) =>
-        (p.address || "").toLowerCase().includes(filters.city.toLowerCase())
+        (p.address || "")
+          .toLowerCase()
+          .includes(filters.city.toLowerCase())
       );
     }
 
@@ -70,8 +75,6 @@ const Home = () => {
       <Categories onSelectCategory={fetchProfessionals} />
       <FilterBar filters={filters} onChange={setFilters} />
 
-
-
       <motion.div style={{ marginTop: "40px" }}>
         <ProfessionalsCarousel
           professionals={filteredProfessionals}
@@ -79,7 +82,7 @@ const Home = () => {
         />
       </motion.div>
 
-      {/* DEMANDAS */}
+      {/* ✅ DEMANDAS */}
       <DemandsPreview />
     </div>
   );
