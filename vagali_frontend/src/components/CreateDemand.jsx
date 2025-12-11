@@ -2,6 +2,8 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { Container, Card, Form, Button, Alert, Spinner, Row, Col } from 'react-bootstrap';
 import { useLocation, useNavigate, useParams } from 'react-router-dom';
 import axios from 'axios';
+import { useAuth } from "./AuthContext";
+
 // Importação de Ícones (Adicionados: Wrench, HandCoins, Upload, Image, Video)
 import { Send, FileText, DollarSign, Calendar, MapPin, Zap, X, Wrench, HandCoins, Upload, Image, Video } from 'lucide-react'; 
 
@@ -20,19 +22,21 @@ const CATEGORY_ICON_MAP = {
 // Lista de serviços para o Select (se for demanda geral)
 const SERVICE_OPTIONS = ['Eletricidade', 'Pintura', 'Hidráulica', 'Alvenaria', 'Limpeza', 'Outros'];
 
-const { isAuthenticated } = useAuth();
 
-useEffect(() => {
-  if (!isAuthenticated) {
-    navigate("/login");
-  }
-}, [isAuthenticated]);
 
 
 const CreateDemand = ({ isEditing = false }) => {
     const location = useLocation();
     const navigate = useNavigate();
     const { id } = useParams();
+
+    const { isAuthenticated } = useAuth();
+
+    useEffect(() => {
+    if (!isAuthenticated) {
+        navigate("/login");
+    }
+    }, [isAuthenticated]);
     
     const professionalData = location.state?.professional || null;
     

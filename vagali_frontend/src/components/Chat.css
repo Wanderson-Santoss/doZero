@@ -1,0 +1,172 @@
+/* ===============================
+   PALETA GERAL VAGALI (CLEAN)
+================================= */
+
+:root {
+    --primary: #0077FF; /* Azul */
+    --accent: #FFCA28; /* Amarelo */
+    --bg-light: #FFFFFF;
+    --bg-card: #F7F9FC;
+    --text-dark: #1A1A1A;
+    --text-light: #555;
+    --border-soft: #E5E5E5;
+}
+
+/* ===============================
+      SIDEBAR DE CONTATOS
+================================= */
+
+.chat-sidebar {
+    background: var(--bg-card);
+    border-right: 1px solid var(--border-soft);
+    min-height: 100vh;
+    padding: 0;
+}
+
+.chat-sidebar-header {
+    background: var(--primary);
+    padding: 16px;
+    display: flex;
+    align-items: center;
+}
+
+.chat-sidebar-header img {
+    height: 32px;
+    margin-right: 12px;
+}
+
+.chat-sidebar-header h5 {
+    color: white;
+    font-weight: bold;
+    margin: 0;
+}
+
+.chat-search {
+    padding: 12px;
+    border-bottom: 1px solid var(--border-soft);
+}
+
+/* Contato da lista */
+.chat-contact {
+    padding: 14px;
+    display: flex;
+    align-items: center;
+    background: var(--bg-card);
+    border-bottom: 1px solid var(--border-soft);
+    cursor: pointer;
+    transition: 0.2s;
+}
+
+.chat-contact:hover {
+    background: #eef4ff;
+}
+
+.chat-contact.active {
+    background: #e0edff;
+}
+
+.chat-avatar {
+    width: 46px;
+    height: 46px;
+    border-radius: 50%;
+    background: var(--accent);
+    color: var(--text-dark);
+    font-weight: bold;
+    font-size: 1.2rem;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    margin-right: 12px;
+}
+
+/* ===============================
+      JANELA PRINCIPAL DO CHAT
+================================= */
+
+.chat-main {
+    background: var(--bg-light);
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+}
+
+/* Header */
+.chat-header {
+    background: var(--primary);
+    padding: 15px;
+    display: flex;
+    align-items: center;
+    color: white;
+}
+
+.chat-header-avatar {
+    width: 42px;
+    height: 42px;
+    border-radius: 50%;
+    background: var(--accent);
+    color: var(--text-dark);
+    font-weight: bold;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    margin-right: 12px;
+}
+
+/* Área de mensagens */
+.chat-body {
+    flex: 1;
+    padding: 18px;
+    overflow-y: auto;
+    background: var(--bg-light);
+}
+
+/* Balões */
+.chat-bubble {
+    max-width: 75%;
+    padding: 10px 14px;
+    border-radius: 12px;
+    margin-bottom: 8px;
+    font-size: 0.95rem;
+}
+
+.chat-bubble.sent {
+    background: var(--accent);
+    color: var(--text-dark);
+    margin-left: auto;
+}
+
+.chat-bubble.received {
+    background: #eef4ff;
+    color: var(--text-dark);
+    margin-right: auto;
+}
+
+.chat-bubble .timestamp {
+    font-size: 0.7rem;
+    text-align: right;
+    margin-top: 4px;
+    opacity: 0.7;
+}
+
+/* Input */
+.chat-input-area {
+    padding: 12px;
+    border-top: 1px solid var(--border-soft);
+    background: var(--bg-light);
+}
+
+.chat-input {
+    background: var(--bg-card) !important;
+    border-radius: 20px !important;
+    border: 1px solid var(--border-soft) !important;
+}
+
+.chat-send-btn {
+    background: var(--accent) !important;
+    border-radius: 50% !important;
+    width: 46px;
+    height: 46px;
+    display: flex !important;
+    align-items: center;
+    justify-content: center;
+}
