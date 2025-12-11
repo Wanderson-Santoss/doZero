@@ -1,0 +1,55 @@
+/* ===============================
+      LOGO – ZOOM HOVER
+=================================== */
+
+.header-logo {
+    transition: transform 0.35s ease, filter 0.35s ease;
+    cursor: pointer;
+}
+
+.header-logo:hover {
+    transform: scale(1.12);
+    filter: brightness(1.15);
+}
+
+/* ===============================
+      LINKS DO MENU
+=================================== */
+
+.nav-animated {
+    position: relative;
+    transition: transform 0.25s ease, color 0.25s ease;
+    overflow: visible;
+}
+
+/* Zoom suave */
+.nav-animated:hover {
+    transform: scale(1.12);
+    color: var(--accent-color, #FFCA28) !important; /* amarelo padrão */
+}
+
+/* Barra animada no hover */
+.nav-animated::after {
+    content: "";
+    position: absolute;
+    width: 0%;
+    height: 3px;
+    background: var(--accent-color, #FFCA28);
+    left: 0;
+    bottom: -2px;
+    transition: width 0.25s ease-in-out;
+}
+
+.nav-animated:hover::after {
+    width: 100%;
+}
+
+/* LINK ATIVO */
+.active-link {
+    color: var(--accent-color, #FFCA28) !important;
+    font-weight: bold;
+}
+
+.active-link::after {
+    width: 100% !important;
+}

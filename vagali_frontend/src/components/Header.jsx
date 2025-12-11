@@ -8,6 +8,9 @@ import { useAuth } from './AuthContext';
 // Ícones Lucide
 import { LogOut, User, Briefcase, LogIn, UserPlus } from 'lucide-react';
 
+// CSS de animação do Header
+import "./HeaderAnimation.css";
+
 // Logo
 import LogoBranco from '../assets/LOGOBRANCO.png';
 
@@ -37,13 +40,13 @@ const Header = () => {
                     <img 
                         src={LogoBranco}
                         alt="logo"
+                        className="header-logo"  // ⬅ classe de animação
                         style={{
-                            height: "100px",     // ⬅ aumenta só a logo
-                            width: "auto",      // mantém proporção natural
+                            height: "100px",  // ⬅ tamanho maior, sem mexer no bloco
+                            width: "auto",
                             marginRight: "12px"
                         }}
                     />
-
                     VagAli
                 </Navbar.Brand>
 
@@ -53,64 +56,63 @@ const Header = () => {
                     
                     <Nav className="ms-auto d-flex align-items-center">
 
-                        {/* BOTÃO INÍCIO */}
+                        {/* INÍCIO */}
                         <NavLink 
                             to="/"
                             className={({ isActive }) =>
-                                "nav-link fw-bold me-3 " +
-                                (isActive ? "text-primary border-bottom border-primary pb-1" : "text-light")
+                                "nav-link nav-animated fw-bold me-3 " +
+                                (isActive ? "active-link" : "text-light")
                             }
                         >
                             Início
                         </NavLink>
 
-                        {/* ------------------ USUÁRIO LOGADO ------------------ */}
+                        {/* --- USUÁRIO LOGADO --- */}
                         {isAuthenticated ? (
                             <>
                                 {/* MINHA CONTA */}
                                 <NavLink 
                                     to="/meu-perfil"
                                     className={({ isActive }) =>
-                                        "nav-link fw-bold me-3 d-flex align-items-center " +
-                                        (isActive ? "text-primary border-bottom border-primary pb-1" : "text-light")
+                                        "nav-link nav-animated fw-bold me-3 d-flex align-items-center " +
+                                        (isActive ? "active-link" : "text-light")
                                     }
                                 >
                                     <User size={18} className="me-1" /> Minha Conta
                                 </NavLink>
 
-                                {/* MEU PORTFÓLIO (SÓ PROFISSIONAL) */}
+                                {/* MEU PORTFÓLIO (PROFISSIONAL) */}
                                 {isUserProfessional && (
                                     <NavLink 
                                         to={`/professional/${userId}`}
                                         className={({ isActive }) =>
-                                            "nav-link fw-bold me-3 d-flex align-items-center " +
-                                            (isActive ? "text-primary border-bottom border-primary pb-1" : "text-light")
+                                            "nav-link nav-animated fw-bold me-3 d-flex align-items-center " +
+                                            (isActive ? "active-link" : "text-light")
                                         }
                                     >
                                         <Briefcase size={18} className="me-1" /> Meu Portfólio
                                     </NavLink>
                                 )}
 
-                                {/* BOTÃO SAIR */}
+                                {/* SAIR */}
                                 <Button
                                     variant="outline-primary"
                                     size="sm"
-                                    className="fw-bold d-flex align-items-center"
+                                    className="fw-bold d-flex align-items-center nav-animated"
                                     onClick={logout}
                                 >
                                     <LogOut size={16} className="me-1" /> Sair
                                 </Button>
                             </>
-
                         ) : (
-                        /* ------------------ USUÁRIO DESLOGADO ------------------ */
+                        /* --- USUÁRIO DESLOGADO --- */
                             <>
                                 {/* LOGIN */}
                                 <NavLink 
                                     to="/login"
                                     className={({ isActive }) =>
-                                        "nav-link fw-bold me-3 d-flex align-items-center " +
-                                        (isActive ? "text-primary border-bottom border-primary pb-1" : "text-warning")
+                                        "nav-link nav-animated fw-bold me-3 d-flex align-items-center " +
+                                        (isActive ? "active-link" : "text-warning")
                                     }
                                 >
                                     <LogIn size={18} className="me-1" /> Login
@@ -121,13 +123,12 @@ const Header = () => {
                                     as={Link} 
                                     to="/register" 
                                     variant="primary"
-                                    className="fw-bold d-flex align-items-center"
+                                    className="fw-bold d-flex align-items-center nav-animated"
                                 >
                                     <UserPlus size={18} className="me-1" /> Cadastro
                                 </Button>
                             </>
                         )}
-
                     </Nav>
                 </Navbar.Collapse>
             </Container>
