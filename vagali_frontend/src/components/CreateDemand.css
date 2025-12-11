@@ -1,0 +1,75 @@
+.create-demand-card {
+  background: linear-gradient(160deg, #1f2431, #2a3042);
+  border-radius: 20px;
+  padding: 32px;
+  color: #fff;
+  box-shadow: 0 20px 45px rgba(0, 0, 0, 0.45);
+}
+
+.create-demand-title {
+  text-align: center;
+  font-weight: 700;
+  margin-bottom: 25px;
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+  color: #4da3ff;
+}
+
+/* Inputs */
+.form-control-dark {
+  background-color: #10131a;
+  border: 1px solid #2f3c55;
+  color: #fff;
+  border-radius: 12px;
+  padding: 12px;
+}
+
+.form-control-dark:focus {
+  background-color: #10131a;
+  border-color: #4da3ff;
+  box-shadow: 0 0 0 0.2rem rgba(77, 163, 255, 0.25);
+  color: #fff;
+}
+
+/* CEP */
+.cep-preview {
+  margin-top: 6px;
+  font-size: 0.9rem;
+  color: #7dd3fc;
+}
+
+/* Upload boxes */
+.upload-box {
+  height: 90px;
+  border-radius: 14px;
+  background: linear-gradient(135deg, #1f2a44, #25345a);
+  color: #cfe6ff;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  gap: 6px;
+  font-size: 0.85rem;
+  transition: all 0.25s ease;
+}
+
+.upload-box:hover {
+  transform: translateY(-4px);
+  background: linear-gradient(135deg, #2a3f6f, #315a9e);
+}
+
+/* Botão principal */
+.btn-gradient {
+  background: linear-gradient(135deg, #4da3ff, #2563eb);
+  border: none;
+  font-weight: 700;
+  border-radius: 14px;
+  color: #fff;
+}
+
+.btn-gradient:hover {
+  opacity: 0.95;
+  transform: translateY(-1px);
+}

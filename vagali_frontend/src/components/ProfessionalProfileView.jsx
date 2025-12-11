@@ -464,11 +464,21 @@ const ProfessionalProfileView = () => {
           <div className="prof-header-actions">
             <button
               className="btn-primary"
-              onClick={() => navigate(`/chat/${id}`)}
+              onClick={() => {
+                if (!isAuthenticated) {
+                  const goLogin = window.confirm(
+                    "Você precisa estar logado para iniciar uma conversa. Deseja fazer login agora?"
+                  );
+                  if (goLogin) navigate("/login");
+                  return;
+                }
+                navigate(`/chat/${id}`);
+              }}
             >
               <MessageCircle size={16} className="me-1" />
               Iniciar conversa
             </button>
+
 
             <button
               className="btn-outline"

@@ -20,6 +20,14 @@ const CATEGORY_ICON_MAP = {
 // Lista de serviços para o Select (se for demanda geral)
 const SERVICE_OPTIONS = ['Eletricidade', 'Pintura', 'Hidráulica', 'Alvenaria', 'Limpeza', 'Outros'];
 
+const { isAuthenticated } = useAuth();
+
+useEffect(() => {
+  if (!isAuthenticated) {
+    navigate("/login");
+  }
+}, [isAuthenticated]);
+
 
 const CreateDemand = ({ isEditing = false }) => {
     const location = useLocation();
