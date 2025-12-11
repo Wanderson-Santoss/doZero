@@ -9,6 +9,7 @@ import Categories from "../components/home/Categories";
 import ProfessionalsCarousel from "../components/home/ProfessionalsCarousel";
 import FilterBar from "../components/home/FilterBar";
 import DemandsPreview from "../components/demands/DemandsPreview";
+import FloatingMeiButton from "../components/FloatingMeiButton";
 
 const PROFESSIONALS_URL = "/api/v1/accounts/profissionais/";
 
@@ -84,7 +85,9 @@ const Home = () => {
 
       {/* ✅ DEMANDAS */}
       <DemandsPreview />
+      <FloatingMeiButton />
     </div>
+      
   );
 };
 
