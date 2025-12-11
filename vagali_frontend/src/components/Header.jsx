@@ -38,11 +38,12 @@ const Header = () => {
                         src={LogoBranco}
                         alt="logo"
                         style={{
-                            width: "100%",
-                            height: "60px",
+                            height: "100px",     // ⬅ aumenta só a logo
+                            width: "auto",      // mantém proporção natural
                             marginRight: "12px"
                         }}
                     />
+
                     VagAli
                 </Navbar.Brand>
 

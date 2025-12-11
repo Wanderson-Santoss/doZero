@@ -1,73 +1,159 @@
+/* ===============================
+   HERO SECTION VAGALI
+================================= */
+
 .hero-section {
+    position: relative;
     width: 100%;
-    min-height: 300px;
-    padding: 80px 20px;
-
-    background:
-        linear-gradient(120deg, #4f46e5, #3b82f6),
-        url("https://images.unsplash.com/photo-1521737604893-d14cc237f11d") center/cover no-repeat;
-
+    height: 78vh;
+    background-image: url("/images/hero-bg.jpg"); /* use sua imagem ou cor */
+    background-size: cover;
+    background-position: center;
     display: flex;
     align-items: center;
     justify-content: center;
-    position: relative;
-
-    color: white;
     overflow: hidden;
 }
 
-/* Overlay NÃO bloqueia clique */
+/* Overlay azul */
 .hero-overlay {
     position: absolute;
     inset: 0;
-    background: rgba(0,0,0,0.30);
+    background: linear-gradient(
+        rgba(0, 119, 255, 0.45),
+        rgba(0, 119, 255, 0.55)
+    );
+    backdrop-filter: brightness(0.8);
+    z-index: 1;
+}
+
+/* -------------------------
+   Partículas animadas
+--------------------------- */
+.particles {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 2;
+    overflow: hidden;
     pointer-events: none;
 }
 
+.particles li {
+    position: absolute;
+    display: block;
+    list-style: none;
+    width: 15px;
+    height: 15px;
+    background: rgba(255, 255, 255, 0.25);
+    bottom: -100px;
+    border-radius: 50%;
+    animation: floatUp 12s linear infinite;
+}
+
+.particles li:nth-child(1) {
+    left: 20%;
+    width: 12px;
+    height: 12px;
+    animation-duration: 10s;
+}
+
+.particles li:nth-child(2) {
+    left: 40%;
+    width: 18px;
+    height: 18px;
+    animation-duration: 13s;
+}
+
+.particles li:nth-child(3) {
+    left: 60%;
+    animation-duration: 11s;
+}
+
+.particles li:nth-child(4) {
+    left: 80%;
+    width: 20px;
+    height: 20px;
+    animation-duration: 15s;
+}
+
+.particles li:nth-child(5) {
+    left: 50%;
+    width: 10px;
+    height: 10px;
+    animation-duration: 9s;
+}
+
+@keyframes floatUp {
+    0% {
+        transform: translateY(0) rotate(0deg);
+        opacity: 0.3;
+    }
+    100% {
+        transform: translateY(-900px) rotate(360deg);
+        opacity: 0;
+    }
+}
+
+/* -------------------------
+       Conteúdo
+--------------------------- */
+
 .hero-content {
     position: relative;
-    max-width: 780px;
+    max-width: 900px;
     text-align: center;
-    padding: 20px;
+    padding: 0 20px;
+    z-index: 3;
 }
 
 .hero-title {
-    font-size: 2.8rem;
+    font-size: 3rem;
     font-weight: 800;
+    color: white;
     line-height: 1.2;
 }
 
 .highlight {
-    color: #facc15;
+    color: #FFCA28;
 }
 
+/* Subtítulo */
 .hero-subtitle {
-    margin-top: 12px;
-    font-size: 1.1rem;
-    opacity: 0.9;
+    margin-top: 20px;
+    font-size: 1.25rem;
+    color: #f1f1f1;
+    max-width: 700px;
+    margin: 20px auto;
 }
 
+/* Botão */
 .hero-button {
-    margin-top: 22px;
-    background: #facc15;
-    color: #1f1f1f;
+    margin-top: 28px;
+    background-color: #FFCA28;
+    color: #1A1A1A;
     border: none;
-    padding: 12px 26px;
-    border-radius: 10px;
-    font-weight: 600;
+    padding: 12px 28px;
+    border-radius: 30px;
     font-size: 1.1rem;
-    cursor: pointer;
+    font-weight: 600;
     display: inline-flex;
     align-items: center;
-    transition: 0.3s;
+    transition: 0.2s ease-in-out;
 }
 
 .hero-button:hover {
-    background: #ffe266;
+    background-color: #ffd75c;
 }
 
-@media (max-width: 700px) {
+/* Responsivo */
+@media (max-width: 768px) {
     .hero-title {
-        font-size: 2rem;
+        font-size: 2.2rem;
+    }
+    .hero-subtitle {
+        font-size: 1.05rem;
     }
 }
