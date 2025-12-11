@@ -72,7 +72,7 @@ class CustomAuthToken(ObtainAuthToken):
 
 
 # -------------------------------------------------------------------
-# 4. CADASTRO (CORRIGIDO)
+# 4. CADASTRO
 # -------------------------------------------------------------------
 @method_decorator(csrf_exempt, name="dispatch")
 class RegisterAPIView(APIView):
@@ -81,11 +81,9 @@ class RegisterAPIView(APIView):
     def post(self, request):
         data = request.data.copy()
 
-        # Ajuste para Django UserCreationForm
         if "password" in data:
             data["password1"] = data.pop("password")
 
-        # Permite enviar profile dentro do JSON
         profile_data = data.get("profile")
         if isinstance(profile_data, dict):
             data.update(profile_data)
@@ -94,20 +92,15 @@ class RegisterAPIView(APIView):
 
         if form.is_valid():
             user = form.save(request)
-            profile = user.profile  # criado via signal
+            profile = user.profile
 
-            # ---------------------------------------------------------
-            # 🔴 SALVAR DADOS PROFISSIONAIS — ESTE ERA O PONTO QUE FALTAVA
-            # ---------------------------------------------------------
             if user.is_professional:
-
                 profile.profession = data.get("profession", "")
                 profile.cnpj = data.get("cnpj") or None
                 profile.bio = data.get("bio", "")
                 profile.cep = data.get("cep", "")
                 profile.address = data.get("address", "")
                 profile.has_completed_professional_setup = True
-
                 profile.save()
 
             return Response(
@@ -121,7 +114,6 @@ class RegisterAPIView(APIView):
                 status=status.HTTP_201_CREATED,
             )
 
-        # Erros
         return Response(form.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
@@ -151,9 +143,10 @@ class ProfilePhotoUploadView(APIView):
 
 
 # -------------------------------------------------------------------
-# 6. PORTFÓLIO
+# 6. PORTFÓLIO (✅ CORRIGIDO)
 # -------------------------------------------------------------------
 class PortfolioItemListCreateView(APIView):
+
     def get_permissions(self):
         if self.request.method == "GET":
             return [permissions.AllowAny()]
@@ -162,18 +155,18 @@ class PortfolioItemListCreateView(APIView):
     def get(self, request):
         professional_id = request.query_params.get("professional_id")
 
-        if professional_id:
-            items = PortfolioItem.objects.filter(
-                profile__user__id=professional_id
-            ).order_by("-created_at")
-        else:
+        if not professional_id:
             return Response([], status=200)
+
+        items = PortfolioItem.objects.filter(
+            profile__user__id=professional_id
+        ).order_by("-created_at")
 
         return Response(
             [
                 {
                     "id": item.id,
-                    "file": item.file.url,
+                    "file": item.file.url if item.file else None,
                     "is_video": item.is_video,
                     "created_at": item.created_at.isoformat(),
                 }
@@ -191,13 +184,14 @@ class PortfolioItemListCreateView(APIView):
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
-        is_video = str(request.data.get("is_video", "false")).lower() in [
+        is_video = str(request.data.get("is_video", "false")).lower() in (
             "true",
             "1",
             "yes",
-        ]
+        )
 
-        item = PortfolioItem.create(
+        # ✅ CORRETO
+        item = PortfolioItem.objects.create(
             profile=profile,
             file=file_obj,
             is_video=is_video,
@@ -210,7 +204,7 @@ class PortfolioItemListCreateView(APIView):
                 "is_video": item.is_video,
                 "created_at": item.created_at.isoformat(),
             },
-            status=201,
+            status=status.HTTP_201_CREATED,
         )
 
 
@@ -223,21 +217,24 @@ class PortfolioItemDestroyView(APIView):
         try:
             item = PortfolioItem.objects.get(pk=pk, profile=profile)
         except PortfolioItem.DoesNotExist:
-            return Response({"detail": "Item não encontrado."}, status=404)
+            return Response(
+                {"detail": "Item não encontrado."},
+                status=status.HTTP_404_NOT_FOUND,
+            )
 
         item.delete()
-        return Response(status=204)
+        return Response(status=status.HTTP_204_NO_CONTENT)
 
 
 # -------------------------------------------------------------------
-# 7. VIRAR PROFISSIONAL (TRIAGEM)
+# 7. VIRAR PROFISSIONAL
 # -------------------------------------------------------------------
 class BecomeProfessionalView(APIView):
     permission_classes = [permissions.IsAuthenticated]
 
     def post(self, request):
-        user: User = request.user
-        profile: Profile = user.profile
+        user = request.user
+        profile = user.profile
 
         if user.is_professional:
             return Response(

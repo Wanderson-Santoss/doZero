@@ -26,7 +26,7 @@ class ProfileSerializer(serializers.ModelSerializer):
     palavras_chave = serializers.CharField(required=False, allow_blank=True)
     photo = serializers.ImageField(required=False, allow_null=True)
 
-    # ✅ NOVO — profissão principal
+    # ✅ profissão principal
     profession = serializers.CharField(
         required=False,
         allow_blank=True,
@@ -89,7 +89,7 @@ class FullProfileSerializer(serializers.ModelSerializer):
             profile.profession = ""
             profile.save()
 
-        # Atualiza campos do profile
+        # ✅ Atualiza campos do profile
         if profile_data:
             ProfileSerializer().update(profile, profile_data)
 
@@ -97,7 +97,7 @@ class FullProfileSerializer(serializers.ModelSerializer):
 
 
 # -------------------------------------------------------------------
-# 3. PROFESSIONAL SERIALIZER (LISTAGEM PÚBLICA)
+# 3. PROFESSIONAL SERIALIZER (LISTAGEM / PERFIL PÚBLICO)
 # -------------------------------------------------------------------
 class ProfessionalSerializer(serializers.ModelSerializer):
     """
@@ -148,7 +148,8 @@ class ProfessionalSerializer(serializers.ModelSerializer):
         return photo.url if photo else None
 
     def get_demands_count(self, obj):
-        return 0  # reservado para o futuro
+        # reservado para uso futuro
+        return 0
 
     def get_profession(self, obj):
         """
