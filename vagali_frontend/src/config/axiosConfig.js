@@ -1,39 +1,31 @@
-import axios from 'axios';
+// src/config/axiosConfig.js
+import axios from "axios";
 
-// Função para setar/limpar o token globalmente
-export const setAuthToken = (token) => {
+const api = axios.create({
+  baseURL: "http://localhost:8000/api/v1/",
+});
+
+// Interceptor para colocar o token automaticamente
+api.interceptors.request.use(
+  (config) => {
+    const token = localStorage.getItem("authToken"); // <--- AGORA ESTÁ IGUAL AO AuthContext
     if (token) {
-        axios.defaults.headers.common['Authorization'] = `Token ${token}`;
-        console.log("Axios Configurado: Token aplicado globalmente.");
-    } else {
-        delete axios.defaults.headers.common['Authorization'];
-        console.log("Axios Configurado: Token removido globalmente.");
+      config.headers.Authorization = `Token ${token}`;
     }
-};
-
-// 🚨 A SOLUÇÃO: Interceptor de Requisição
-// Ele executa antes de CADA requisição para garantir o token mais atualizado.
-axios.interceptors.request.use(
-    (config) => {
-        const token = localStorage.getItem('userToken');
-
-        // Adiciona o token se ele existir E se a requisição não for para login/registro
-        // Isso evita enviar cabeçalhos desnecessários para endpoints de autenticação.
-        const isAuthUrl = config.url.includes('/auth/login/') || config.url.includes('/auth/register/');
-
-        if (token && !isAuthUrl) {
-            // Sobrescreve/adiciona o cabeçalho Authorization
-            config.headers.Authorization = `Token ${token}`;
-        }
-        return config;
-    },
-    (error) => {
-        return Promise.reject(error);
-    }
+    return config;
+  },
+  (error) => Promise.reject(error)
 );
 
-// Check inicial na carga da aplicação (para manter o usuário logado após F5)
-const initialToken = localStorage.getItem('userToken');
-if (initialToken) {
-    setAuthToken(initialToken);
-}
+// Helper para setar token manualmente (opcional)
+export const setAuthToken = (token) => {
+  if (token) {
+    localStorage.setItem("authToken", token);
+    api.defaults.headers.common["Authorization"] = `Token ${token}`;
+  } else {
+    localStorage.removeItem("authToken");
+    delete api.defaults.headers.common["Authorization"];
+  }
+};
+
+export default api;

@@ -4,7 +4,7 @@ from django.db import models
 from django.conf import settings
 from django.utils.translation import gettext_lazy as _
 
-# --- Opções de Status ---
+# --- Status de demandas ---
 DEMANDA_STATUS_CHOICES = [
     ('pendente', 'Pendente'),
     ('aceita', 'Aceita'),
@@ -13,6 +13,7 @@ DEMANDA_STATUS_CHOICES = [
     ('cancelada', 'Cancelada'),
 ]
 
+# --- Status de ofertas ---
 OFFER_STATUS_CHOICES = [
     ('pendente', 'Pendente'),
     ('aceita', 'Aceita'),
@@ -20,13 +21,13 @@ OFFER_STATUS_CHOICES = [
 ]
 
 
-# --- 1. Service Model (Tipos de Serviços Oferecidos) ---
+# ---------------------------------------------------------
+# 1. Tabela de Serviços (Eletricista, Pintura, Limpeza...)
+# ---------------------------------------------------------
 class Service(models.Model):
-    """ Tipos de serviços (ex: Eletricista, Encanador, Faxineira). """
     name = models.CharField(_('Nome do Serviço'), max_length=100, unique=True)
     description = models.TextField(_('Descrição'))
-    # NOVO CAMPO: Para exibir um ícone no frontend
-    icon = models.CharField(_('Ícone (Emoji ou CSS class)'), max_length=50, default='🛠️')
+    icon = models.CharField(_('Ícone'), max_length=50, default='🛠️')  # emoji ou icone
 
     def __str__(self):
         return self.name
@@ -34,49 +35,49 @@ class Service(models.Model):
     class Meta:
         verbose_name = _('Serviço')
         verbose_name_plural = _('Serviços')
+        ordering = ['name']
 
 
-# --- 2. Demanda Model (O que o Cliente pede) ---
+# ---------------------------------------------------------
+# 2. Demanda (Pedido de cliente)
+# ---------------------------------------------------------
 class Demanda(models.Model):
-    """ Pedido de serviço feito por um Cliente. """
-    
-    # Usuário que criou a demanda (o Cliente)
+
     client = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         on_delete=models.CASCADE,
         related_name='demandas_criadas',
-        limit_choices_to={'is_professional': False} 
+        limit_choices_to={'is_professional': False}
     )
-    
-    # O profissional que aceitou a demanda (opcional, pode ser NULL)
+
     professional = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         on_delete=models.SET_NULL,
         null=True,
         blank=True,
         related_name='demandas_aceitas',
-        limit_choices_to={'is_professional': True} 
-    ) 
-    
+        limit_choices_to={'is_professional': True}
+    )
+
     service = models.ForeignKey(
         Service,
         on_delete=models.CASCADE,
         related_name='demandas'
     )
-    
-    titulo = models.CharField(_('Título da Demanda'), max_length=255)
-    descricao = models.TextField(_('Descrição Detalhada'))
-    cep = models.CharField(_('CEP do Serviço'), max_length=8)
-    status = models.CharField(
-        _('Status'),
-        max_length=20,
-        choices=DEMANDA_STATUS_CHOICES,
-        default='pendente'
-    )
+
+    titulo = models.CharField(_('Título'), max_length=255)
+    descricao = models.TextField(_('Descrição'))
+    cep = models.CharField(_('CEP'), max_length=8)
+
+    # 🆕 Arquivos adicionados
+    photos = models.FileField(upload_to="demandas/photos/", null=True, blank=True)
+    videos = models.FileField(upload_to="demandas/videos/", null=True, blank=True)
+
+    status = models.CharField(_('Status'), max_length=20, choices=DEMANDA_STATUS_CHOICES, default='pendente')
     created_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
-        return f"Demanda #{self.id} - {self.titulo} ({self.status})"
+        return f"Demanda #{self.id} - {self.titulo}"
 
     class Meta:
         verbose_name = _('Demanda')
@@ -84,77 +85,70 @@ class Demanda(models.Model):
         ordering = ['-created_at']
 
 
-# --- 3. Offer Model (Proposta do Profissional para a Demanda) ---
+# ---------------------------------------------------------
+# 3. Offer (Proposta do profissional)
+# ---------------------------------------------------------
 class Offer(models.Model):
-    """ Proposta feita por um Profissional para uma Demanda específica. """
-    
+
     demanda = models.ForeignKey(
         Demanda,
         on_delete=models.CASCADE,
         related_name='offers'
     )
-    
-    # O profissional que fez a oferta
+
     professional = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         on_delete=models.CASCADE,
         related_name='offers_feitas',
-        limit_choices_to={'is_professional': True} 
+        limit_choices_to={'is_professional': True}
     )
-    
-    proposta_valor = models.DecimalField(_('Valor Proposto'), max_digits=10, decimal_places=2)
-    proposta_prazo = models.CharField(_('Prazo Sugerido'), max_length=50) # Ex: "3 dias", "1 semana"
-    
-    status = models.CharField(
-        _('Status da Oferta'),
-        max_length=20,
-        choices=OFFER_STATUS_CHOICES,
-        default='pendente'
-    )
+
+    proposta_valor = models.DecimalField(_('Valor'), max_digits=10, decimal_places=2)
+    proposta_prazo = models.CharField(_('Prazo'), max_length=50)
+
+    status = models.CharField(_('Status Oferta'), max_length=20, choices=OFFER_STATUS_CHOICES, default='pendente')
     created_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
-        return f"Oferta de {self.professional.email} para Demanda #{self.demanda.id}"
+        return f"Oferta #{self.id} - {self.demanda.titulo}"
 
     class Meta:
+        unique_together = ('demanda', 'professional')
         verbose_name = _('Oferta')
         verbose_name_plural = _('Ofertas')
-        unique_together = ('demanda', 'professional')
 
 
-# --- 4. Feedback Model (Avaliação de um Serviço) ---
+# ---------------------------------------------------------
+# 4. Feedback (Avaliação)
+# ---------------------------------------------------------
 class Feedback(models.Model):
-    """ Avaliação de um serviço concluído. """
-    
+
     demanda = models.OneToOneField(
         Demanda,
         on_delete=models.CASCADE,
-        related_name='feedback',
-        help_text=_('A Demanda que gerou o feedback.')
+        related_name='feedback'
     )
-    
-    # O Cliente que DEIXOU o feedback
+
     client = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         on_delete=models.CASCADE,
         related_name='feedbacks_feitos',
         limit_choices_to={'is_professional': False}
     )
-    
-    # O Profissional que RECEBEU o feedback
+
     professional = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         on_delete=models.CASCADE,
         related_name='feedbacks_recebidos',
         limit_choices_to={'is_professional': True}
     )
-    
+
     rating = models.PositiveSmallIntegerField(_('Avaliação'), choices=[(i, str(i)) for i in range(1, 6)])
     comentario = models.TextField(_('Comentário'), blank=True, null=True)
     created_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
-        return f"Feedback {self.rating} estrelas para {self.professional.email}"
+        return f"Avaliação {self.rating} para {self.professional.email}"
 
     class Meta:
         verbose_name = _('Feedback')
