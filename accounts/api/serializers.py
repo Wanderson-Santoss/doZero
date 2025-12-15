@@ -26,7 +26,7 @@ class ProfileSerializer(serializers.ModelSerializer):
     palavras_chave = serializers.CharField(required=False, allow_blank=True)
     photo = serializers.ImageField(required=False, allow_null=True)
 
-    # ✅ profissão principal
+    #  profissão principal
     profession = serializers.CharField(
         required=False,
         allow_blank=True,

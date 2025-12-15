@@ -8,7 +8,7 @@ const api = axios.create({
 // Interceptor para colocar o token automaticamente
 api.interceptors.request.use(
   (config) => {
-    const token = localStorage.getItem("authToken"); // <--- AGORA ESTÁ IGUAL AO AuthContext
+    const token = localStorage.getItem("authToken"); 
     if (token) {
       config.headers.Authorization = `Token ${token}`;
     }

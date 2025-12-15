@@ -1,11 +1,9 @@
 import React from 'react';
 import { Card, Button } from 'react-bootstrap';
-// CORREÇÃO: Substituindo 'react-bootstrap-icons' por 'lucide-react'
 import { Star } from 'lucide-react'; 
 import { Link } from 'react-router-dom';
 
 const ProfileCard = ({ professional }) => {
-    // 1. Desestruturando os dados (com defaults)
     const fullName = professional.full_name || professional.email;
     const bioSnippet = professional.bio 
         ? professional.bio.substring(0, 70) + (professional.bio.length > 70 ? '...' : '') 

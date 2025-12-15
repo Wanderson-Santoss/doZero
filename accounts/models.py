@@ -5,14 +5,14 @@ from django.db.models.signals import post_save
 from django.dispatch import receiver
 
 
-# ---------------------------------------------------------------
+# ===============================================================
 # 1. Custom User Manager — login usando e-mail
-# ---------------------------------------------------------------
+# ===============================================================
 class CustomUserManager(BaseUserManager):
     def create_user(self, email, password=None, **extra_fields):
         if not email:
-            raise ValueError('O endereço de e-mail deve ser definido.')
-        
+            raise ValueError("O endereço de e-mail deve ser definido.")
+
         email = self.normalize_email(email)
         user = self.model(email=email, **extra_fields)
         user.set_password(password)
@@ -20,71 +20,96 @@ class CustomUserManager(BaseUserManager):
         return user
 
     def create_superuser(self, email, password=None, **extra_fields):
-        extra_fields.setdefault('is_staff', True)
-        extra_fields.setdefault('is_superuser', True)
-        extra_fields.setdefault('is_active', True)
+        extra_fields.setdefault("is_staff", True)
+        extra_fields.setdefault("is_superuser", True)
+        extra_fields.setdefault("is_active", True)
 
-        if extra_fields.get('is_staff') is not True:
-            raise ValueError('Superusuário deve ter is_staff=True.')
-        if extra_fields.get('is_superuser') is not True:
-            raise ValueError('Superusuário deve ter is_superuser=True.')
-            
+        if extra_fields.get("is_staff") is not True:
+            raise ValueError("Superusuário deve ter is_staff=True.")
+        if extra_fields.get("is_superuser") is not True:
+            raise ValueError("Superusuário deve ter is_superuser=True.")
+
         return self.create_user(email, password, **extra_fields)
 
 
-# ---------------------------------------------------------------
-# 2. Custom User Model — remove username — login por e-mail
-# ---------------------------------------------------------------
+# ===============================================================
+# 2. Custom User Model — login por e-mail
+# ===============================================================
 class User(AbstractUser):
     username = None
-    email = models.EmailField(_('endereço de e-mail'), unique=True)
+    email = models.EmailField(_("Endereço de e-mail"), unique=True)
 
     is_professional = models.BooleanField(
         default=False,
-        verbose_name=_('É Profissional?'),
-        help_text=_('Define se o usuário será tratado como prestador de serviços.')
+        verbose_name=_("É Profissional?"),
+        help_text=_("Define se o usuário será tratado como prestador de serviços."),
     )
 
     objects = CustomUserManager()
 
-    USERNAME_FIELD = 'email'
+    USERNAME_FIELD = "email"
     REQUIRED_FIELDS = []
 
     def __str__(self):
         return self.email
 
     class Meta:
-        verbose_name = _('Usuário')
-        verbose_name_plural = _('Usuários')
+        verbose_name = _("Usuário")
+        verbose_name_plural = _("Usuários")
 
 
-# ---------------------------------------------------------------
+# ===============================================================
 # 3. Profile Model — dados adicionais do usuário
-# ---------------------------------------------------------------
+# ===============================================================
 class Profile(models.Model):
     user = models.OneToOneField(
         User,
         on_delete=models.CASCADE,
-        related_name='profile'
+        related_name="profile",
     )
 
-    full_name = models.CharField(_('Nome Completo'), max_length=255, blank=True, null=True)
-    cpf = models.CharField(_('CPF'), max_length=11, unique=True, blank=True, null=True)
-    phone_number = models.CharField(_('Telefone'), max_length=15, blank=True, null=True)
+    # Dados pessoais
+    full_name = models.CharField(_("Nome Completo"), max_length=255, blank=True, null=True)
+    cpf = models.CharField(_("CPF"), max_length=11, unique=True, blank=True, null=True)
+    phone_number = models.CharField(_("Telefone"), max_length=15, blank=True, null=True)
 
-    cep = models.CharField(_('CEP'), max_length=8, blank=True, null=True)
-    address = models.CharField(_('Endereço/Cidade'), max_length=255, blank=True, null=True)
+    # Localização
+    cep = models.CharField(_("CEP"), max_length=8, blank=True, null=True)
+    address = models.CharField(_("Endereço/Cidade"), max_length=255, blank=True, null=True)
 
-    bio = models.TextField(_('Sobre Mim'), blank=True, null=True)
-    cnpj = models.CharField(_('CNPJ'), max_length=14, blank=True, null=True)
+    # Informações profissionais
+    bio = models.TextField(_("Sobre Mim"), blank=True, null=True)
+    cnpj = models.CharField(_("CNPJ"), max_length=14, blank=True, null=True)
 
-    palavras_chave = models.TextField('Palavras-Chave/Tags', blank=True, default='')
+    palavras_chave = models.TextField(
+        _("Palavras-Chave/Tags"),
+        blank=True,
+        default="",
+        help_text="Ex: Pedreiro, Pintor, Eletricista",
+    )
 
-    photo = models.ImageField(_('Foto de Perfil'), upload_to='profiles/', blank=True, null=True)
+    profession = models.CharField(
+        _("Profissão principal"),
+        max_length=100,
+        blank=True,
+        null=True,
+    )
 
-    profession = models.CharField(_('Profissão principal'), max_length=100, blank=True, null=True)
+    # Foto
+    photo = models.ImageField(
+        _("Foto de Perfil"),
+        upload_to="profiles/",
+        blank=True,
+        null=True,
+    )
 
-    rating = models.DecimalField(_('Avaliação Média'), max_digits=3, decimal_places=2, default=0.00)
+    # ⭐ Avaliação — começa SEMPRE com 5 estrelas
+    rating = models.DecimalField(
+        _("Avaliação Média"),
+        max_digits=3,
+        decimal_places=2,
+        default=5.00,
+    )
 
     has_completed_professional_setup = models.BooleanField(default=False)
 
@@ -92,11 +117,13 @@ class Profile(models.Model):
         return f"Perfil de {self.user.email}"
 
     class Meta:
-        verbose_name = _('Perfil')
-        verbose_name_plural = _('Perfis')
+        verbose_name = _("Perfil")
+        verbose_name_plural = _("Perfis")
 
 
-# ----------------------- SIGNALS -----------------------
+# ===============================================================
+# 4. Signals — cria Profile automaticamente
+# ===============================================================
 @receiver(post_save, sender=User)
 def create_user_profile(sender, instance, created, **kwargs):
     if created:
@@ -109,14 +136,14 @@ def save_user_profile(sender, instance, **kwargs):
         instance.profile.save()
 
 
-# ---------------------------------------------------------------
-# 5. PortfolioItem — fotos e vídeos
-# ---------------------------------------------------------------
+# ===============================================================
+# 5. PortfolioItem — fotos e vídeos do profissional
+# ===============================================================
 class PortfolioItem(models.Model):
     profile = models.ForeignKey(
         Profile,
         on_delete=models.CASCADE,
-        related_name="portfolio_items"
+        related_name="portfolio_items",
     )
 
     file = models.FileField(upload_to="portfolio/")
